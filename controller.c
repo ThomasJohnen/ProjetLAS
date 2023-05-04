@@ -13,19 +13,29 @@
 #include "info.h"
 #include "utils_v2.h"
 
-void effectuerCommande(char* commande[], int taille, char *adr, int port) {
+int initSockController(int port, char adr){
+    // socket creation
     int sockfd = ssocket();
+    // prepare socket to connect
     sconnect(adr, port, sockfd);
+
+    return sockfd;
+    exit(1);
+}
+
+void effectuerCommande(char* commande[], int taille, int sockfd) {
+    
 
     //swrite(sockfd, &taille, sizeof(int));
     swrite(sockfd, commande, sizeof(char)*taille);
 
-    sclose(sockfd);
+    
 }
 
 
 int main(int argc, char **argv) {
 
+    int port; 
 
     if (argv[1] == NULL) {
         perror("Un argument minimum est nécessaire");
@@ -38,16 +48,16 @@ int main(int argc, char **argv) {
         printf("%d\n", PORTS[i]);
         //trouver les ports surlesquels il y a une connexion possible
     }
+
+    initSockController(port, adr);
+
     char *buffer;
-   
     buffer = readLine();
-    sclose(pipefd[0]);
     while ((strcmp(buffer, "q") != 0)) { // q pour fermer boucle
-        effectuerCommande(buffer, strlen(buffer), adr, port);
+        effectuerCommande(buffer, strlen(buffer), adr);
         buffer = readLine();
     }
 
-    skill(pid_zombie, SIGKILL);
-    sclose(pipefd[1]);
+    // skill(pid_zombie, SIGKILL);
     return 0;
 }

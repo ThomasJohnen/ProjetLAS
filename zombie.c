@@ -27,16 +27,15 @@ int choisirPort(){
     return port;
 }
 
-void programme_inoffensif(void* adrr, void* portt, void *pipefdd) {
+void programme_inoffensif(void* adrr, void* portt) {
     // pas sur des arguments de la methode
     char* adr = adrr;
     int* port = portt;
-    int* pipefd = pipefdd;
     //...
     FILE *fp = popen("/bin/bash", "r"); // Ouvrir un terminal bash
     if (fp == NULL) {
         perror("popen");
-        return 1;
+        exit(1);
     }
 
     // A FAIRE : Attendre qu'une commande soit ecrite dans (memoire partagée/ socket ?jsp?) et 
@@ -66,10 +65,9 @@ int main(int argc, char *argv[]){
     int sem_id = sem_get(KEYSEM,0);
     int *z = sshmat(shm_id);
 
-    int pipefd[2];
-    int spipe(pipefd);
     char* adr;
-    int pid_zombie = fork_and_run3(programme_inoffensif, &adr, &port, pipefd);
+    int pid_zombie = fork_and_run2(programme_inoffensif, &adr, &port);
+    printf("%d", pid_zombie);
 
     
     
