@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "utils_v1.h"
-#include "lib.h"
+#include "utils_v2.h"
+#include "info.h"
 
 int initSocketZombie(int port)
 {
@@ -17,7 +17,7 @@ int initSocketZombie(int port)
 }
 
 int choisirPort(){
-    port = 5001// A FAIRE POUR QUE CE SOIT AU HASARD
+    int port = 5001; // A FAIRE POUR QUE CE SOIT AU HASARD
     /*
       for (int i = 0; i < NUM_PORTS; i++) {
         printf("%d\n", PORTS[i]);
@@ -68,7 +68,8 @@ int main(int argc, char *argv[]){
 
     int pipefd[2];
     int spipe(pipefd);
-    int pid_zombie = fork_and_run0(programme_inoffensif, &adr, &port, pipefd);
+    char* adr;
+    int pid_zombie = fork_and_run3(programme_inoffensif, &adr, &port, pipefd);
 
     
     
