@@ -37,11 +37,6 @@ int initSockController(char* adr){
     exit(1);
 }
 
-void envoyerCommande(char* commande, int taille, int sockfd) {
-    swrite(sockfd, &commande, sizeof(char)*taille);
-    
-}
-
 void EndControllerhandler(int num){
     end = 1;
 }
