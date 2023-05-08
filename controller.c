@@ -10,34 +10,13 @@
 
 
 #include "info.h"
+#include "reseau.h"
 #include "utils_v2.h"
 
-//#define Nb_PORTS 10
+void envoyerCommande(char* commande, char* adr, Socket_list sl) {
 
-volatile sig_atomic_t end = 0;
-//int* ports[Nb_PORTS];
 
-volatile int nbHosts = 0;
-
-int* ports = smalloc(sizeof(int)*NUM_PORTS*10);
-
-void initSockController(char* adr){
-    for(int i = 0; i < NUM_PORTS; i++){
-        if(sconnect(adr, PORTS[i], sockfd)==0){
-            int sockfd = ssocket();
-            ports[nbHosts] = sockfd;
-            printf("port %d : %d\n", nbHosts, PORTS[i])
-        nbHosts ++;
-        }
-    }
-    
-    printf("\nnombre de hosts : %d\n", nbHosts);
 }
-
-void EndControllerhandler(int num){
-    end = 1;
-}
-
 
 int main(int argc, char *argv[]) {
 

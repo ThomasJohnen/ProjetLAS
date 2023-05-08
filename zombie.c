@@ -7,28 +7,9 @@
 
 #include "utils_v2.h"
 #include "info.h"
+#include "reseau.h"
 
 volatile sig_atomic_t end = 0;
-
-int initSocketZombie(int port)
-{
-  int sockfd = ssocket();
-  sbind(port,sockfd);
-  slisten(sockfd,5);
-  return sockfd;
-}
-
-int choisirPort(){
-    int port = 5001; // A FAIRE POUR QUE CE SOIT AU HASARD
-    /*
-      for (int i = 0; i < NUM_PORTS; i++) {
-        printf("%d\n", PORTS[i]);
-        //chosir un port au hasard (a faire)
-    }
-    */
-    printf("Port choisi : %d\n", port);
-    return port;
-}
 
 void EndZombieHandler(int num){
     end = 1;
