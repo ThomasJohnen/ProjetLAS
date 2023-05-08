@@ -12,28 +12,26 @@
 #include "info.h"
 #include "utils_v2.h"
 
-#define Nb_PORTS 10
+//#define Nb_PORTS 10
 
 volatile sig_atomic_t end = 0;
-int* ports[Nb_PORTS];
+//int* ports[Nb_PORTS];
 
-int initSockController(char* adr){
-    int nbHosts = 0;
-    int sockfd = ssocket();
-    /*int j = 0;
-    for (int i = 0; i < NUM_PORTS; i++) {
-        if(sconnect(adr, PORTS[i], sockfd) == 0){
-            nbHosts ++;
-            *ports[j] = PORTS[i];
-            j++;
-        }
-    }*/
-    if(sconnect(adr, 5001, sockfd)==0){
+volatile int nbHosts = 0;
+
+int* ports = smalloc(sizeof(int)*NUM_PORTS*10);
+
+void initSockController(char* adr){
+    for(int i = 0; i < NUM_PORTS; i++){
+        if(sconnect(adr, PORTS[i], sockfd)==0){
+            int sockfd = ssocket();
+            ports[nbHosts] = sockfd;
+            printf("port %d : %d\n", nbHosts, PORTS[i])
         nbHosts ++;
+        }
     }
+    
     printf("\nnombre de hosts : %d\n", nbHosts);
-    return sockfd;
-    exit(1);
 }
 
 void EndControllerhandler(int num){
@@ -41,9 +39,7 @@ void EndControllerhandler(int num){
 }
 
 
-int main(int argc, char **argv) {
-
-    // int port;
+int main(int argc, char *argv[]) {
 
     ssigaction(SIGINT, EndControllerhandler);
 
@@ -60,7 +56,7 @@ int main(int argc, char **argv) {
 
     char* commande;
     char* response;
-    while (!end) {
+    while (!end ) {
         // lis la ligne de commande
         commande = readLine();
         if(end){
@@ -75,7 +71,7 @@ int main(int argc, char **argv) {
             // envoie la commande a un zombie
             swrite(sockfd, &commande, sizeof(char));
             // envoie la commande a chaque zombies
-            /*for (int i = 0; i < Nb_PORTS; i++)
+            /*for (int i = 0; i < Nb_PORTS; i++
             {
                 if(ports[i] != 0){
                     swrite(sockfd, &commande, sizeof(char));
