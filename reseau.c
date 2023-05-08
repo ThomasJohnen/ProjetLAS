@@ -24,7 +24,6 @@ Socket_list initSockController(char* adr)
 { //connexion aux serveur d'écoute
     int* ports = malloc(NUM_PORTS * sizeof(int));
     int nbHosts = 0;
-    Socket_list sl;
 
     for(int i = 0; i < NUM_PORTS; i++){
         int sockfd = ssocket();
@@ -58,7 +57,7 @@ int initSocketZombie()
     printf("Port sélectionné : %d\n", selectedPort);
 
     //tester si port déjà pris
-    if (sbind(port,sockfd)!= -1){
+    if (sbind(selectedPort,sockfd)!= -1){
         initiated = 1;
     }
 

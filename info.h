@@ -13,8 +13,8 @@ typedef struct Socket_list {
     int nbr_sockets;
 } Socket_list;
 
-typedef struct Zombie_list  {
+/*typedef struct Zombie_list  {
     int[] sockets;
-} Zombie_list;
+} Zombie_list;*/
 
 #endif
