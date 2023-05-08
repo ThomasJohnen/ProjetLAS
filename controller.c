@@ -13,9 +13,22 @@
 #include "reseau.h"
 #include "utils_v2.h"
 
-void envoyerCommande(char* commande, char* adr, Socket_list sl) {
+void envoyerCommande(char* commande, char* adr, int tailleCommande, Socket_list sl) {
+    for (int i = 0; i < sl.nbr_sockets; i++) {
+        swrite(sl.sockets[i], commande, sizeof(char)*tailleCommande);
+    }
+}
 
-
+char** lireReponseCommande(Socket_list sl) {
+    char** reps = malloc(sl.nbr_sockets * sizeof(char*));
+    for (int i = 0; i < sl.nbr_sockets; i++) {
+        int newsockfd = saccept(sl.sockets[i]);
+        char* rep = malloc(100 * sizeof(char));
+        sread(newsockfd, rep, 100);
+        sclose(newsockfd);
+        reps[i] = rep;
+    }
+    return reps;
 }
 
 int main(int argc, char *argv[]) {
@@ -29,11 +42,34 @@ int main(int argc, char *argv[]) {
 
     char* adr = argv[1];
 
-    int sockfd = initSockController(adr);
+    Socket_list sockfdlist = initSockController(adr);
 
-    swrite(sockfd, &adr, sizeof(char));
+    printf("Entrez une commande à exécuter 1: \n");
+    char* buffer = readline();
 
-    char* commande;
+    while ((strcmp(buffer,"q")!=0)){
+        int tailleCommande = stlen(buffer);
+        envoyerCommande(buffer, adr, tailleCommande, sockfdlist);
+
+        // Récupérer les réponses des connexions
+        char** rep = lireReponseCommande(sockfdlist);
+        // Afficher
+        for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
+            printf("Réponse %d : %s\n", i, rep[i]);
+        }
+        // Libérer la mémoire 
+        for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
+            free(rep[i]);
+        }
+        free(rep);
+        
+        printf("Entrez une commande à exécuter: \n");
+        buffer = readline();
+    }
+    /*
+    //swrite(sockfd, &adr, sizeof(char)); pas compris a quoi ca servait
+
+    char* commande;//manque des malloc pour ces deux variables je pense
     char* response;
     while (!end ) {
         // lis la ligne de commande
@@ -50,21 +86,20 @@ int main(int argc, char *argv[]) {
             // envoie la commande a un zombie
             swrite(sockfd, &commande, sizeof(char));
             // envoie la commande a chaque zombies
-            /*for (int i = 0; i < Nb_PORTS; i++
-            {
-                if(ports[i] != 0){
-                    swrite(sockfd, &commande, sizeof(char));
-                }
-                
-            }*/
+            //for (int i = 0; i < Nb_PORTS; i++
+            //{
+            //    if(ports[i] != 0){
+            //        swrite(sockfd, &commande, sizeof(char));
+            //    }
+            //    
+            //}
             // lis la reponse de chaque zombie
             sread(sockfd, &response, sizeof(char));
             // affiche la reponse
             swrite(1, &response, sizeof(char));
         }
         
-    }
+    }*/
     sclose(sockfd);
-    // skill(pid_zombie, SIGKILL);
     return 0;
 }

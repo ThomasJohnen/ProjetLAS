@@ -6,17 +6,23 @@ ALL= zombie controller
 
 all: $(ALL)
 
-zombie : zombie.o utils_v2.o 
+zombie : zombie.o utils_v2.o reseau.o
 	$(CC) $(CCFLAGS) -o zombie zombie.o utils_v2.o
 
 zombie.o : zombie.c info.h
 	$(CC) $(CCFLAGS) -c zombie.c
 
-controller : controller.o utils_v2.o 
+controller : controller.o utils_v2.o reseau.o
 	$(CC) $(CCFLAGS) -o controller controller.o utils_v2.o	
 
 controller.o : controller.c info.h
 	$(CC) $(CCFLAGS) -c controller.c
+
+reseau : reseau.o utils_v2.o
+	$(CC) $(CCFLAGS) -o reseau reseau.o utils_v2.o	
+
+reseau.o : reseau.c info.h
+	$(CC) $(CCFLAGS) -c reseau.c
 
 utils_v2.o: utils_v2.c utils_v2.h
 	$(CC) $(CCFLAGS) -c utils_v2.c	

