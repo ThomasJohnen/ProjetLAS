@@ -21,7 +21,8 @@ void endHandler(int sig)
 
 void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
     for (int i = 0; i < sl.nbr_sockets; i++) {
-        swrite(sl.sockets[i], commande, sizeof(char)*tailleCommande);
+        commande[tailleCommande] = '\0';
+        swrite(sl.sockets[i], commande, sizeof(char) * (tailleCommande + 1));
     }
 }
 
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]) {
         char* commande = readLine();
         int tailleCommande = strlen(commande);
         envoyerCommande(commande, tailleCommande, sockfdlist);
+        sleep(1);
     }
 
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
