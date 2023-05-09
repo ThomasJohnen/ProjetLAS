@@ -10,38 +10,36 @@
 
 
 #include "info.h"
+#include "reseau.h"
 #include "utils_v2.h"
 
-//#define Nb_PORTS 10
-
-volatile sig_atomic_t end = 0;
-//int* ports[Nb_PORTS];
-
-volatile int nbHosts = 0;
-
-int* ports = smalloc(sizeof(int)*NUM_PORTS*10);
-
-void initSockController(char* adr){
-    for(int i = 0; i < NUM_PORTS; i++){
-        if(sconnect(adr, PORTS[i], sockfd)==0){
-            int sockfd = ssocket();
-            ports[nbHosts] = sockfd;
-            printf("port %d : %d\n", nbHosts, PORTS[i])
-        nbHosts ++;
-        }
+void envoyerCommande(char* commande, char* adr, int tailleCommande, Socket_list sl) {
+    for (int i = 0; i < sl.nbr_sockets; i++) {
+        swrite(sl.sockets[i], commande, sizeof(char)*tailleCommande);
     }
-    
-    printf("\nnombre de hosts : %d\n", nbHosts);
 }
 
-void EndControllerhandler(int num){
-    end = 1;
+char** lireReponseCommande(Socket_list sl) {
+    char** reps = malloc(sl.nbr_sockets * sizeof(char*));
+    for (int i = 0; i < sl.nbr_sockets; i++) {
+        int newsockfd = saccept(sl.sockets[i]);
+        char* rep = malloc(100 * sizeof(char));
+        sread(newsockfd, rep, 100);
+        sclose(newsockfd);
+        reps[i] = rep;
+    }
+    return reps;
 }
+
 
 
 int main(int argc, char *argv[]) {
 
-    ssigaction(SIGINT, EndControllerhandler);
+
+
+
+    //A GARDER error
+    //ssigaction(SIGINT, endServerHandler);
 
     if (argv[1] == NULL) {
         perror("Un argument minimum est nécessaire");
@@ -50,11 +48,34 @@ int main(int argc, char *argv[]) {
 
     char* adr = argv[1];
 
-    int sockfd = initSockController(adr);
+    Socket_list sockfdlist = initSockController(adr);
 
-    swrite(sockfd, &adr, sizeof(char));
+    printf("Entrez une commande à exécuter 1: \n");
+    char* buffer = readLine();
 
-    char* commande;
+    while ((strcmp(buffer,"q")!=0)){
+        int tailleCommande = strlen(buffer);
+        envoyerCommande(buffer, adr, tailleCommande, sockfdlist);
+
+        // Récupérer les réponses des connexions
+        char** rep = lireReponseCommande(sockfdlist);
+        // Afficher
+        for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
+            printf("Réponse %d : %s\n", i, rep[i]);
+        }
+        // Libérer la mémoire 
+        for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
+            free(rep[i]);
+        }
+        free(rep);
+        
+        printf("Entrez une commande à exécuter: \n");
+        buffer = readLine();
+    }
+    /*
+    //swrite(sockfd, &adr, sizeof(char)); pas compris a quoi ca servait
+
+    char* commande;//manque des malloc pour ces deux variables je pense
     char* response;
     while (!end ) {
         // lis la ligne de commande
@@ -71,13 +92,13 @@ int main(int argc, char *argv[]) {
             // envoie la commande a un zombie
             swrite(sockfd, &commande, sizeof(char));
             // envoie la commande a chaque zombies
-            /*for (int i = 0; i < Nb_PORTS; i++
-            {
-                if(ports[i] != 0){
-                    swrite(sockfd, &commande, sizeof(char));
-                }
-                
-            }*/
+            //for (int i = 0; i < Nb_PORTS; i++
+            //{
+            //    if(ports[i] != 0){
+            //        swrite(sockfd, &commande, sizeof(char));
+            //    }
+            //    
+            //}
             // lis la reponse de chaque zombie
             sread(sockfd, &response, sizeof(char));
             // affiche la reponse
@@ -85,7 +106,11 @@ int main(int argc, char *argv[]) {
         }
         
     }
-    sclose(sockfd);
-    // skill(pid_zombie, SIGKILL);
+    sclose(sockfd);*/
+    for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
+        sclose(sockfdlist.sockets[i]);
+    }
+    printf("%d porttt", PORTS[0]);
+    printf("%d porttt", NUM_PORTS);
     return 0;
 }

