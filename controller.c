@@ -35,10 +35,9 @@ char** lireReponseCommande(Socket_list sl) {
 
 int main(int argc, char *argv[]) {
 
-    printf("%d porttt", PORTS[0]);
-    printf("%d porttt", NUM_PORTS);
 
-    
+
+
     //A GARDER error
     //ssigaction(SIGINT, endServerHandler);
 
@@ -111,6 +110,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
         sclose(sockfdlist.sockets[i]);
     }
-    
+    printf("%d porttt", PORTS[0]);
+    printf("%d porttt", NUM_PORTS);
     return 0;
 }

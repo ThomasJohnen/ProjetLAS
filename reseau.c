@@ -12,6 +12,7 @@
 
 #include "info.h"
 #include "utils_v2.h"
+#include "reseau.h"
 
 
 
@@ -27,7 +28,15 @@ Socket_list initSockController(char* adr)
 
     for(int i = 0; i < NUM_PORTS; i++){
         int sockfd = ssocket();
-        if(sconnect(adr, PORTS[i], sockfd)==0){
+
+        // s'adapter au connect et pas sconnect
+        struct sockaddr_in addr;
+        memset(&addr,0,sizeof(addr)); /* en System V */
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(PORTS[i]);
+        inet_aton(adr,&addr.sin_addr);
+
+        if(connect(sockfd, (struct sockaddr *) &addr, sizeof(addr))==0){
             ports[nbHosts] = sockfd;
             nbHosts ++;
             printf("port %d : %d\n", nbHosts, PORTS[i]);
