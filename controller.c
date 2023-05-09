@@ -31,9 +31,11 @@ char** lireReponseCommande(Socket_list sl) {
     return reps;
 }
 
+
+
 int main(int argc, char *argv[]) {
 
-    ssigaction(SIGINT, EndControllerhandler);
+    ssigaction(SIGINT, endServerHandler);
 
     if (argv[1] == NULL) {
         perror("Un argument minimum est nécessaire");
@@ -99,7 +101,11 @@ int main(int argc, char *argv[]) {
             swrite(1, &response, sizeof(char));
         }
         
-    }*/
-    sclose(sockfd);
+    }
+    sclose(sockfd);*/
+    for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
+        sclose(sockfdlist.sockets);
+    }
+    
     return 0;
 }

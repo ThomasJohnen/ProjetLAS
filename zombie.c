@@ -37,6 +37,7 @@ char* programme_inoffensif(char* commande)
     // Fermeture du flux de fichier
     pclose(fp);
 
+    free(rep);
     return rep;
 }
 

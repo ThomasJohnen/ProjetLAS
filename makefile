@@ -7,7 +7,7 @@ ALL= zombie controller reseau
 all: $(ALL)
 
 zombie : zombie.o utils_v2.o reseau.o
-	$(CC) $(CCFLAGS) -o zombie zombie.o utils_v2.o
+	$(CC) $(CCFLAGS) -o zombie zombie.o utils_v2.o reseau.o
 
 zombie.o : zombie.c info.h
 	$(CC) $(CCFLAGS) -c zombie.c
