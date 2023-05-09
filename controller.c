@@ -35,7 +35,12 @@ char** lireReponseCommande(Socket_list sl) {
 
 int main(int argc, char *argv[]) {
 
-    ssigaction(SIGINT, endServerHandler);
+    printf("%d porttt", PORTS[0]);
+    printf("%d porttt", NUM_PORTS);
+
+    
+    //A GARDER error
+    //ssigaction(SIGINT, endServerHandler);
 
     if (argv[1] == NULL) {
         perror("Un argument minimum est nécessaire");
@@ -47,10 +52,10 @@ int main(int argc, char *argv[]) {
     Socket_list sockfdlist = initSockController(adr);
 
     printf("Entrez une commande à exécuter 1: \n");
-    char* buffer = readline();
+    char* buffer = readLine();
 
     while ((strcmp(buffer,"q")!=0)){
-        int tailleCommande = stlen(buffer);
+        int tailleCommande = strlen(buffer);
         envoyerCommande(buffer, adr, tailleCommande, sockfdlist);
 
         // Récupérer les réponses des connexions
@@ -66,7 +71,7 @@ int main(int argc, char *argv[]) {
         free(rep);
         
         printf("Entrez une commande à exécuter: \n");
-        buffer = readline();
+        buffer = readLine();
     }
     /*
     //swrite(sockfd, &adr, sizeof(char)); pas compris a quoi ca servait
@@ -104,7 +109,7 @@ int main(int argc, char *argv[]) {
     }
     sclose(sockfd);*/
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
-        sclose(sockfdlist.sockets);
+        sclose(sockfdlist.sockets[i]);
     }
     
     return 0;

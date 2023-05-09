@@ -2,7 +2,7 @@ CC=gcc
 
 CCFLAGS=-D_DEFAULT_SOURCE -D_XOPEN_SOURCE -D_BSD_SOURCE -std=c11 -pedantic -Wvla -Wall -Werror
 
-ALL= zombie controller reseau
+ALL= zombie controller
 
 all: $(ALL)
 
@@ -13,13 +13,10 @@ zombie.o : zombie.c info.h
 	$(CC) $(CCFLAGS) -c zombie.c
 
 controller : controller.o utils_v2.o reseau.o
-	$(CC) $(CCFLAGS) -o controller controller.o utils_v2.o	
+	$(CC) $(CCFLAGS) -o controller controller.o utils_v2.o	reseau.o
 
 controller.o : controller.c info.h
 	$(CC) $(CCFLAGS) -c controller.c
-
-reseau : reseau.o utils_v2.o
-	$(CC) $(CCFLAGS) -o reseau reseau.o utils_v2.o	
 
 reseau.o : reseau.c info.h
 	$(CC) $(CCFLAGS) -c reseau.c

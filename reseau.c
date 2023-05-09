@@ -13,12 +13,12 @@
 #include "info.h"
 #include "utils_v2.h"
 
-volatile sig_atomic_t end = 0;
 
-void endServerHandler(int sig)
+
+/*void endServerHandler(int sig)
 {
   end = 1;
-}
+}*/
 
 Socket_list initSockController(char* adr)
 { //connexion aux serveur d'écoute
