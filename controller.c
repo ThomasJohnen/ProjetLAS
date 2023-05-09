@@ -8,12 +8,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-
 #include "info.h"
 #include "reseau.h"
 #include "utils_v2.h"
 
-void envoyerCommande(char* commande, char* adr, int tailleCommande, Socket_list sl) {
+void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
     for (int i = 0; i < sl.nbr_sockets; i++) {
         swrite(sl.sockets[i], commande, sizeof(char)*tailleCommande);
     }
@@ -22,40 +21,50 @@ void envoyerCommande(char* commande, char* adr, int tailleCommande, Socket_list 
 char** lireReponseCommande(Socket_list sl) {
     char** reps = malloc(sl.nbr_sockets * sizeof(char*));
     for (int i = 0; i < sl.nbr_sockets; i++) {
-        int newsockfd = saccept(sl.sockets[i]);
         char* rep = malloc(100 * sizeof(char));
-        sread(newsockfd, rep, 100);
-        sclose(newsockfd);
+        sread(sl.sockets[i], rep, 100);
         reps[i] = rep;
     }
     return reps;
 }
 
 
+void controllerFils(Socket_list* sl){
+    Socket_list* sockfdlist = sl;
+    while(!end){
+        char** reps = lireReponseCommande(*sockfdlist);
+        for (int i = 0; i < sockfdlist->nbr_sockets; i++) {
+            swrite(0,reps[i],strlen(reps));;
+        }
+    }
+}
+
 
 int main(int argc, char *argv[]) {
-
-
-
-
-    //A GARDER error
-    //ssigaction(SIGINT, endServerHandler);
 
     if (argv[1] == NULL) {
         perror("Un argument minimum est nécessaire");
         exit(EXIT_FAILURE);
     }
 
-    char* adr = argv[1];
+    char* adresseIp = argv[1];
 
-    Socket_list sockfdlist = initSockController(adr);
+    Socket_list sockfdlist = initSockController(adresseIp);
 
-    printf("Entrez une commande à exécuter 1: \n");
-    char* buffer = readLine();
+    int pid_child = fork_and_run1(controllerFils,&sockfdlist);
 
-    while ((strcmp(buffer,"q")!=0)){
+    while(!end){
+        printf("Entrez une commande à exécuter : \n");
+        char* commande = readLine();
+        int tailleCommande = strlen(commande);
+        envoyerCommande(commande, tailleCommande, sockfdlist);
+    }
+    
+
+
+    /*while ((strcmp(buffer,"q")!=0)){
         int tailleCommande = strlen(buffer);
-        envoyerCommande(buffer, adr, tailleCommande, sockfdlist);
+        envoyerCommande(buffer, adresseIp, tailleCommande, sockfdlist);
 
         // Récupérer les réponses des connexions
         char** rep = lireReponseCommande(sockfdlist);
@@ -71,7 +80,7 @@ int main(int argc, char *argv[]) {
         
         printf("Entrez une commande à exécuter: \n");
         buffer = readLine();
-    }
+    }*/
     /*
     //swrite(sockfd, &adr, sizeof(char)); pas compris a quoi ca servait
 
