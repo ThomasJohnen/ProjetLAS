@@ -12,6 +12,13 @@
 #include "reseau.h"
 #include "utils_v2.h"
 
+volatile sig_atomic_t end = 0;
+
+void endHandler(int sig)
+{
+  end = 1;
+}
+
 void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
     for (int i = 0; i < sl.nbr_sockets; i++) {
         swrite(sl.sockets[i], commande, sizeof(char)*tailleCommande);
@@ -29,29 +36,31 @@ char** lireReponseCommande(Socket_list sl) {
 }
 
 
-void controllerFils(Socket_list* sl){
+void controllerFils(void* sl){
     Socket_list* sockfdlist = sl;
     while(!end){
         char** reps = lireReponseCommande(*sockfdlist);
         for (int i = 0; i < sockfdlist->nbr_sockets; i++) {
-            swrite(0,reps[i],strlen(reps));;
+            swrite(1,reps[i],strlen(reps[i]))   ;
         }
     }
 }
 
 
 int main(int argc, char *argv[]) {
+    ssigaction(SIGINT, endHandler);
 
-    if (argv[1] == NULL) {
+    if (argc < 2) {
         perror("Un argument minimum est nécessaire");
         exit(EXIT_FAILURE);
     }
+
 
     char* adresseIp = argv[1];
 
     Socket_list sockfdlist = initSockController(adresseIp);
 
-    int pid_child = fork_and_run1(controllerFils,&sockfdlist);
+    fork_and_run1(controllerFils, &sockfdlist);
 
     while(!end){
         printf("Entrez une commande à exécuter : \n");
@@ -59,63 +68,7 @@ int main(int argc, char *argv[]) {
         int tailleCommande = strlen(commande);
         envoyerCommande(commande, tailleCommande, sockfdlist);
     }
-    
 
-
-    /*while ((strcmp(buffer,"q")!=0)){
-        int tailleCommande = strlen(buffer);
-        envoyerCommande(buffer, adresseIp, tailleCommande, sockfdlist);
-
-        // Récupérer les réponses des connexions
-        char** rep = lireReponseCommande(sockfdlist);
-        // Afficher
-        for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
-            printf("Réponse %d : %s\n", i, rep[i]);
-        }
-        // Libérer la mémoire 
-        for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
-            free(rep[i]);
-        }
-        free(rep);
-        
-        printf("Entrez une commande à exécuter: \n");
-        buffer = readLine();
-    }*/
-    /*
-    //swrite(sockfd, &adr, sizeof(char)); pas compris a quoi ca servait
-
-    char* commande;//manque des malloc pour ces deux variables je pense
-    char* response;
-    while (!end ) {
-        // lis la ligne de commande
-        commande = readLine();
-        if(end){
-            // envoie le signal a chaque zombie
-            for (int i = 0; i < Nb_PORTS; i++)
-            {
-                if(ports[i] != 0){
-                    swrite(sockfd, "stop", sizeof(char));
-                }
-            }
-        }else{
-            // envoie la commande a un zombie
-            swrite(sockfd, &commande, sizeof(char));
-            // envoie la commande a chaque zombies
-            //for (int i = 0; i < Nb_PORTS; i++
-            //{
-            //    if(ports[i] != 0){
-            //        swrite(sockfd, &commande, sizeof(char));
-            //    }
-            //    
-            //}
-            // lis la reponse de chaque zombie
-            sread(sockfd, &response, sizeof(char));
-            // affiche la reponse
-            swrite(1, &response, sizeof(char));
-        }
-        
-    }
-    sclose(sockfd);*/
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
         sclose(sockfdlist.sockets[i]);
     }

