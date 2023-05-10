@@ -12,6 +12,8 @@
 #include "reseau.h"
 #include "utils_v2.h"
 
+#define NB_SOCKET 100
+
 void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
     for (int i = 0; i < sl.nbr_sockets; i++) {
         swrite(sl.sockets[i], commande, tailleCommande);
@@ -33,8 +35,26 @@ char** lireReponseCommande(Socket_list sl) {
 
 void controllerFils(void* sl){
     Socket_list* sockfdlist = sl;
+    int nbSocket = sockfdlist->nbr_sockets;
+    struct pollfd fds[NB_SOCKET];
+    char** reps;
+    
+    // init poll
+	for (int i = 0; i < nbSocket; i++)
+	{
+		fds[i].fd = sockfdlist->sockets[i];
+		fds[i].events = POLLIN;
+	}
+
     while(true){
-        char** reps = lireReponseCommande(*sockfdlist);
+        int ret = spoll(fds,nbSocket,1000);
+        if(ret == 0) continue;
+        for (size_t i = 0; i < nbSocket; i++)
+        {
+            if(fds[i].revents && POLLIN){
+                reps = lireReponseCommande(*sockfdlist);
+            }
+        }
         if (reps == NULL){
             break;
         }
