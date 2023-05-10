@@ -21,8 +21,7 @@ void endHandler(int sig)
 
 void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
     for (int i = 0; i < sl.nbr_sockets; i++) {
-        commande[tailleCommande] = '\0';
-        swrite(sl.sockets[i], commande, sizeof(char) * (tailleCommande + 1));
+        swrite(sl.sockets[i], commande, tailleCommande);
     }
 }
 
@@ -56,19 +55,17 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
     char* adresseIp = argv[1];
 
     Socket_list sockfdlist = initSockController(adresseIp);
 
     fork_and_run1(controllerFils, &sockfdlist);
 
+    char commande[1024];
     while(!end){
         printf("Entrez une commande à exécuter : \n");
-        char* commande = readLine();
-        int tailleCommande = strlen(commande);
-        envoyerCommande(commande, tailleCommande, sockfdlist);
-        sleep(1);
+        int taille = sread(0,commande, 1024);
+        envoyerCommande(commande, taille, sockfdlist);
     }
 
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {

