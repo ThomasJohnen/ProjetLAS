@@ -79,8 +79,37 @@ int main(int argc, char *argv[]) {
     char** adressesIp = malloc(argc * sizeof(char*));
     int* pids_chils = malloc(argc * sizeof(int));
 
-    Socket_list sockfdlist;
+    Socket_list* sockfdlist = malloc(argc * sizeof(Socket_list));
 
+    for (int i = 0; i < argc-1; i++)
+    {
+        adressesIp[i] = argv[i+1];
+        sockfdlist[i] = initSockController(adressesIp[i]);
+        pids_chils[i] = fork_and_run1(controllerFils, &sockfdlist[i]);
+    }
+    
+    char commande[MAX_TAILLE_BUFFER];
+    int taille;
+    char* message = "\nEntrez une commande à exécuter : \n";
+    swrite(0,message, strlen(message));
+    while((taille = sread(0,commande, MAX_TAILLE_BUFFER))!=0){
+        for (int i = 0; i < argc-1; i++)
+        {
+            envoyerCommande(commande, taille, sockfdlist[i]);
+        }
+    }
+    for (int i = 0; i < argc-1; i++)
+    {
+        skill(pids_chils[i],SIGTERM);
+    }
+    for (int i = 0; i < argc-1; i++) {
+        for (int j = 0; j < sockfdlist[i].nbr_sockets; j++)
+        {
+            sclose(sockfdlist[i].sockets[j]);
+        }
+    }
+
+    /*Socket_list sockfdlist;
     for (int i = 0; i < argc-1; i++)
     {
         adressesIp[i] = argv[i+1];
@@ -99,10 +128,9 @@ int main(int argc, char *argv[]) {
     {
         skill(pids_chils[i],SIGTERM);
     }
-    
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
         sclose(sockfdlist.sockets[i]);
-    }
+    }*/
 
     free(adressesIp);
     free(pids_chils);

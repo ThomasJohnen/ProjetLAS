@@ -22,22 +22,19 @@ void zombieFils(void* sockfdController){
 int main(int argc, char *argv[]){
 
     int sockfd = initSocketZombie();
-
-    // on considere qu'il n'y a qu'un seul controller ici
-    int sockfdController;
     
     while(true){
         // utilisé accept et pas saccept. verifier son resultat et si == -1 alors c'est qu'il a recu un signal (pour labo)
-        sockfdController = accept(sockfd, NULL, NULL);
+        int sockfdController = accept(sockfd, NULL, NULL);
 
         if(sockfdController != -1){
             fork_and_run1(zombieFils, &sockfdController);
         }else{
             // faire ici pour labo
+            sclose(sockfdController);
             break;
         }
     }
-    sclose(sockfdController);
     return 0;
     
 }
