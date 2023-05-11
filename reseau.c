@@ -41,7 +41,7 @@ Socket_list initSockController(char* adr)
             nbHosts ++;
             printf("port %d : %d\n", nbHosts, PORTS[i]);
         }else {
-            close(sockfd);
+            sclose(sockfd);
         }
     }
     

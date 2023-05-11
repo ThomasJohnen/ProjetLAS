@@ -35,6 +35,7 @@ int main(int argc, char *argv[]){
     int sockfdController;
     
     while(!end){
+        // utilisé accept et pas saccept. verifier son resultat et si == -1 alors c'est qu'il a recu un signal (pour labo)
         sockfdController = saccept(sockfd);
 
         fork_and_run1(zombieFils, &sockfdController);

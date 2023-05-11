@@ -46,7 +46,7 @@ void controllerFils(void* sl){
 		fds[i].events = POLLIN;
 	}
 
-    while(true){
+    while(nbSocket>0){
         int ret = spoll(fds,nbSocket,1000);
         if(ret == 0) continue;
         for (size_t i = 0; i < nbSocket; i++)
@@ -56,12 +56,15 @@ void controllerFils(void* sl){
             }
         }
         if (reps == NULL){
-            break;
+            nbSocket--;
         }
         for (int i = 0; i < sockfdlist->nbr_sockets; i++) {
             swrite(1,reps[i],strlen(reps[i]))   ;
         }
     }
+
+    skill(getppid(),SIGTERM);
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[]) {
@@ -75,14 +78,16 @@ int main(int argc, char *argv[]) {
 
     Socket_list sockfdlist = initSockController(adresseIp);
 
-    fork_and_run1(controllerFils, &sockfdlist);
+    int pid_child = fork_and_run1(controllerFils, &sockfdlist);
 
     char commande[1024];
     int taille;
-    printf("Entrez une commande à exécuter : \n");
+    char* message = "\nEntrez une commande à exécuter : \n";
+    swrite(0,message, strlen(message));
     while((taille = sread(0,commande, 1024))!=0){
         envoyerCommande(commande, taille, sockfdlist);
     }
+    skill(pid_child,SIGTERM);
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
         sclose(sockfdlist.sockets[i]);
     }
