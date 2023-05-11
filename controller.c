@@ -13,6 +13,7 @@
 #include "utils_v2.h"
 
 #define NB_SOCKET 100
+#define NB_ADRESSES 2
 
 void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
     for (int i = 0; i < sl.nbr_sockets; i++) {
@@ -74,12 +75,18 @@ int main(int argc, char *argv[]) {
         perror("Un argument minimum est nécessaire");
         exit(EXIT_FAILURE);
     }
+    char* adressesIp [NB_ADRESSES];
+    int pids_chils[NB_ADRESSES];
+    Socket_list sockfdlist;
 
-    char* adresseIp = argv[1];
+    for (int i = 0; i < NB_ADRESSES; i++)
+    {
+        adressesIp[i] = argv[i+1];
 
-    Socket_list sockfdlist = initSockController(adresseIp);
+        sockfdlist = initSockController(adressesIp[i]);
 
-    int pid_child = fork_and_run1(controllerFils, &sockfdlist);
+        pids_chils[i] = fork_and_run1(controllerFils, &sockfdlist);
+    }
 
     char commande[1024];
     int taille;
@@ -88,7 +95,11 @@ int main(int argc, char *argv[]) {
     while((taille = sread(0,commande, 1024))!=0){
         envoyerCommande(commande, taille, sockfdlist);
     }
-    skill(pid_child,SIGTERM);
+    for (int i = 0; i < NB_ADRESSES; i++)
+    {
+        skill(pids_chils[i],SIGTERM);
+    }
+    
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
         sclose(sockfdlist.sockets[i]);
     }

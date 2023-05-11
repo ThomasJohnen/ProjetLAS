@@ -14,22 +14,14 @@
 #include "utils_v2.h"
 #include "reseau.h"
 
-
-
-/*void endServerHandler(int sig)
-{
-  end = 1;
-}*/
-
 Socket_list initSockController(char* adr)
-{ //connexion aux serveur d'écoute
+{
     int* ports = smalloc(NUM_PORTS * sizeof(int));
     int nbHosts = 0;
 
     for(int i = 0; i < NUM_PORTS; i++){
         int sockfd = ssocket();
 
-        // s'adapter au connect et pas sconnect
         struct sockaddr_in addr;
         memset(&addr,0,sizeof(addr)); /* en System V */
         addr.sin_family = AF_INET;
