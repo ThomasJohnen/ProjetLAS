@@ -9,13 +9,6 @@
 #include "info.h"
 #include "reseau.h"
 
-volatile sig_atomic_t end = 0;
-
-void endHandler(int sig)
-{
-  end = 1;
-}
-
 void zombieFils(void* sockfdController){
     int* sockfd = sockfdController;
 
@@ -27,14 +20,13 @@ void zombieFils(void* sockfdController){
 }
 
 int main(int argc, char *argv[]){
-    ssigaction(SIGINT, endHandler);
 
     int sockfd = initSocketZombie();
 
     // on considere qu'il n'y a qu'un seul controller ici
     int sockfdController;
     
-    while(!end){
+    while(true){
         // utilisé accept et pas saccept. verifier son resultat et si == -1 alors c'est qu'il a recu un signal (pour labo)
         sockfdController = saccept(sockfd);
 
