@@ -32,7 +32,6 @@ char** lireReponseCommande(Socket_list sl) {
         }
         reps[i] = rep;
     }
-    
     return reps;
 }
 
