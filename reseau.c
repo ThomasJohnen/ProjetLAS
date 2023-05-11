@@ -14,24 +14,18 @@
 #include "utils_v2.h"
 #include "reseau.h"
 
-
-
-/*void endServerHandler(int sig)
-{
-  end = 1;
-}*/
+#define MAX_BUFFER_SIZE 30
 
 Socket_list initSockController(char* adr)
-{ //connexion aux serveur d'écoute
+{
     int* ports = smalloc(NUM_PORTS * sizeof(int));
     int nbHosts = 0;
 
     for(int i = 0; i < NUM_PORTS; i++){
         int sockfd = ssocket();
 
-        // s'adapter au connect et pas sconnect
         struct sockaddr_in addr;
-        memset(&addr,0,sizeof(addr)); /* en System V */
+        memset(&addr,0,sizeof(addr));
         addr.sin_family = AF_INET;
         addr.sin_port = htons(PORTS[i]);
         inet_aton(adr,&addr.sin_addr);
@@ -39,13 +33,16 @@ Socket_list initSockController(char* adr)
         if(connect(sockfd, (struct sockaddr *) &addr, sizeof(addr))==0){
             ports[nbHosts] = sockfd;
             nbHosts ++;
-            printf("port %d : %d\n", nbHosts, PORTS[i]);
+            char message[MAX_BUFFER_SIZE];
+            sprintf(message, "port %d : %d\n", nbHosts, PORTS[i]);
+            write(STDOUT_FILENO, message, strlen(message));
         }else {
             sclose(sockfd);
         }
     }
-    
-    printf("\nnombre de hosts : %d\n", nbHosts);
+    char message[MAX_BUFFER_SIZE];
+    sprintf(message, "\nnombre de hosts : %d\n", nbHosts);
+    write(STDOUT_FILENO, message, strlen(message));
     Socket_list sl;
     sl.sockets = ports;
     sl.nbr_sockets = nbHosts;
@@ -64,8 +61,13 @@ int initSocketZombie()
     int selectedPort = PORTS[randomIndex];
     printf("Port sélectionné : %d\n", selectedPort);
 
+    struct sockaddr_in addr;
+    memset(&addr,0,sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(selectedPort);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
     //tester si port déjà pris
-    if (sbind(selectedPort,sockfd)!= -1){
+    if (bind(sockfd, (struct sockaddr *) &addr, sizeof(addr))!= -1){
         initiated = 1;
     }
 
