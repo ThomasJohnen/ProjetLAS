@@ -109,29 +109,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /*Socket_list sockfdlist;
-    for (int i = 0; i < argc-1; i++)
-    {
-        adressesIp[i] = argv[i+1];
-        sockfdlist = initSockController(adressesIp[i]);
-        pids_chils[i] = fork_and_run1(controllerFils, &sockfdlist);
-    }
-
-    char commande[MAX_TAILLE_BUFFER];
-    int taille;
-    char* message = "\nEntrez une commande à exécuter : \n";
-    swrite(0,message, strlen(message));
-    while((taille = sread(0,commande, MAX_TAILLE_BUFFER))!=0){
-        envoyerCommande(commande, taille, sockfdlist);
-    }
-    for (int i = 0; i < argc-1; i++)
-    {
-        skill(pids_chils[i],SIGTERM);
-    }
-    for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
-        sclose(sockfdlist.sockets[i]);
-    }*/
-
     free(adressesIp);
     free(pids_chils);
     return 0;
