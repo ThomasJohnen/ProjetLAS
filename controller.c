@@ -8,109 +8,91 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-
 #include "info.h"
 #include "reseau.h"
 #include "utils_v2.h"
 
-void envoyerCommande(char* commande, char* adr, int tailleCommande, Socket_list sl) {
+#define NB_SOCKET 100
+
+void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
     for (int i = 0; i < sl.nbr_sockets; i++) {
-        swrite(sl.sockets[i], commande, sizeof(char)*tailleCommande);
+        swrite(sl.sockets[i], commande, tailleCommande);
     }
 }
 
 char** lireReponseCommande(Socket_list sl) {
     char** reps = malloc(sl.nbr_sockets * sizeof(char*));
     for (int i = 0; i < sl.nbr_sockets; i++) {
-        int newsockfd = saccept(sl.sockets[i]);
         char* rep = malloc(100 * sizeof(char));
-        sread(newsockfd, rep, 100);
-        sclose(newsockfd);
+        int taille = sread(sl.sockets[i], rep, 100);
+        if(taille == 0){
+            return NULL;
+        }
         reps[i] = rep;
     }
     return reps;
 }
 
+void controllerFils(void* sl){
+    Socket_list* sockfdlist = sl;
+    int nbSocket = sockfdlist->nbr_sockets;
+    struct pollfd fds[NB_SOCKET];
+    char** reps;
+    
+    // init poll
+	for (int i = 0; i < nbSocket; i++)
+	{
+		fds[i].fd = sockfdlist->sockets[i];
+		fds[i].events = POLLIN;
+	}
 
+    while(nbSocket>0){
+        int ret = spoll(fds,nbSocket,1000);
+        if(ret == 0) continue;
+        for (size_t i = 0; i < nbSocket; i++)
+        {
+            if(fds[i].revents && POLLIN){
+                reps = lireReponseCommande(*sockfdlist);
+            }
+        }
+        if (reps == NULL){
+            nbSocket--;
+        }
+        for (int i = 0; i < sockfdlist->nbr_sockets; i++) {
+            swrite(1,reps[i],strlen(reps[i]))   ;
+        }
+    }
+
+    skill(getppid(),SIGTERM);
+    exit(EXIT_SUCCESS);
+}
 
 int main(int argc, char *argv[]) {
 
-
-
-
-    //A GARDER error
-    //ssigaction(SIGINT, endServerHandler);
-
-    if (argv[1] == NULL) {
+    if (argc < 2) {
         perror("Un argument minimum est nécessaire");
         exit(EXIT_FAILURE);
     }
 
-    char* adr = argv[1];
+    char* adresseIp = argv[1];
 
-    Socket_list sockfdlist = initSockController(adr);
+    Socket_list sockfdlist = initSockController(adresseIp);
 
-    printf("Entrez une commande à exécuter 1: \n");
-    char* buffer = readLine();
+    int pid_child = fork_and_run1(controllerFils, &sockfdlist);
 
-    while ((strcmp(buffer,"q")!=0)){
-        int tailleCommande = strlen(buffer);
-        envoyerCommande(buffer, adr, tailleCommande, sockfdlist);
-
-        // Récupérer les réponses des connexions
-        char** rep = lireReponseCommande(sockfdlist);
-        // Afficher
-        for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
-            printf("Réponse %d : %s\n", i, rep[i]);
-        }
-        // Libérer la mémoire 
-        for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
-            free(rep[i]);
-        }
-        free(rep);
-        
-        printf("Entrez une commande à exécuter: \n");
-        buffer = readLine();
+    char commande[1024];
+    int taille;
+    char* message = "\nEntrez une commande à exécuter : \n";
+    swrite(0,message, strlen(message));
+    while((taille = sread(0,commande, 1024))!=0){
+        envoyerCommande(commande, taille, sockfdlist);
     }
-    /*
-    //swrite(sockfd, &adr, sizeof(char)); pas compris a quoi ca servait
-
-    char* commande;//manque des malloc pour ces deux variables je pense
-    char* response;
-    while (!end ) {
-        // lis la ligne de commande
-        commande = readLine();
-        if(end){
-            // envoie le signal a chaque zombie
-            for (int i = 0; i < Nb_PORTS; i++)
-            {
-                if(ports[i] != 0){
-                    swrite(sockfd, "stop", sizeof(char));
-                }
-            }
-        }else{
-            // envoie la commande a un zombie
-            swrite(sockfd, &commande, sizeof(char));
-            // envoie la commande a chaque zombies
-            //for (int i = 0; i < Nb_PORTS; i++
-            //{
-            //    if(ports[i] != 0){
-            //        swrite(sockfd, &commande, sizeof(char));
-            //    }
-            //    
-            //}
-            // lis la reponse de chaque zombie
-            sread(sockfd, &response, sizeof(char));
-            // affiche la reponse
-            swrite(1, &response, sizeof(char));
-        }
-        
-    }
-    sclose(sockfd);*/
+    skill(pid_child,SIGTERM);
     for (int i = 0; i < sockfdlist.nbr_sockets; i++) {
         sclose(sockfdlist.sockets[i]);
     }
-    printf("%d porttt", PORTS[0]);
-    printf("%d porttt", NUM_PORTS);
+
+    printf("port %d\n", PORTS[0]);
+    printf("num port %d\n", NUM_PORTS);
     return 0;
 }

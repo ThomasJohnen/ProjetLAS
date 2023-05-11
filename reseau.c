@@ -23,7 +23,7 @@
 
 Socket_list initSockController(char* adr)
 { //connexion aux serveur d'écoute
-    int* ports = malloc(NUM_PORTS * sizeof(int));
+    int* ports = smalloc(NUM_PORTS * sizeof(int));
     int nbHosts = 0;
 
     for(int i = 0; i < NUM_PORTS; i++){
@@ -40,8 +40,8 @@ Socket_list initSockController(char* adr)
             ports[nbHosts] = sockfd;
             nbHosts ++;
             printf("port %d : %d\n", nbHosts, PORTS[i]);
-        } else {
-            close(sockfd);
+        }else {
+            sclose(sockfd);
         }
     }
     
@@ -54,7 +54,6 @@ Socket_list initSockController(char* adr)
 
 int initSocketZombie()
 { // intialise serveur d'écoute
-
   int sockfd = ssocket();
   int initiated = 0;
   while (initiated==0){
