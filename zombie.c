@@ -28,9 +28,14 @@ int main(int argc, char *argv[]){
     
     while(true){
         // utilisé accept et pas saccept. verifier son resultat et si == -1 alors c'est qu'il a recu un signal (pour labo)
-        sockfdController = saccept(sockfd);
+        sockfdController = accept(sockfd, NULL, NULL);
 
-        fork_and_run1(zombieFils, &sockfdController);
+        if(sockfdController != -1){
+            fork_and_run1(zombieFils, &sockfdController);
+        }else{
+            // faire ici pour labo
+            break;
+        }
     }
     sclose(sockfdController);
     return 0;

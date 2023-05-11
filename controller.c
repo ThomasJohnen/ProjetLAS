@@ -14,6 +14,7 @@
 
 #define NB_SOCKET 100
 #define NB_ADRESSES 2
+#define MAX_TAILLE_BUFFER 1024
 
 void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
     for (int i = 0; i < sl.nbr_sockets; i++) {
@@ -31,6 +32,7 @@ char** lireReponseCommande(Socket_list sl) {
         }
         reps[i] = rep;
     }
+    
     return reps;
 }
 
@@ -40,13 +42,11 @@ void controllerFils(void* sl){
     struct pollfd fds[NB_SOCKET];
     char** reps;
     
-    // init poll
 	for (int i = 0; i < nbSocket; i++)
 	{
 		fds[i].fd = sockfdlist->sockets[i];
 		fds[i].events = POLLIN;
 	}
-
     while(nbSocket>0){
         int ret = spoll(fds,nbSocket,1000);
         if(ret == 0) continue;
@@ -75,27 +75,27 @@ int main(int argc, char *argv[]) {
         perror("Un argument minimum est nécessaire");
         exit(EXIT_FAILURE);
     }
-    char* adressesIp [NB_ADRESSES];
-    int pids_chils[NB_ADRESSES];
+
+    char** adressesIp = malloc(argc * sizeof(char*));
+    int* pids_chils = malloc(argc * sizeof(int));
+
     Socket_list sockfdlist;
 
-    for (int i = 0; i < NB_ADRESSES; i++)
+    for (int i = 0; i < argc-1; i++)
     {
         adressesIp[i] = argv[i+1];
-
         sockfdlist = initSockController(adressesIp[i]);
-
         pids_chils[i] = fork_and_run1(controllerFils, &sockfdlist);
     }
 
-    char commande[1024];
+    char commande[MAX_TAILLE_BUFFER];
     int taille;
     char* message = "\nEntrez une commande à exécuter : \n";
     swrite(0,message, strlen(message));
-    while((taille = sread(0,commande, 1024))!=0){
+    while((taille = sread(0,commande, MAX_TAILLE_BUFFER))!=0){
         envoyerCommande(commande, taille, sockfdlist);
     }
-    for (int i = 0; i < NB_ADRESSES; i++)
+    for (int i = 0; i < argc-1; i++)
     {
         skill(pids_chils[i],SIGTERM);
     }
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
         sclose(sockfdlist.sockets[i]);
     }
 
-    printf("port %d\n", PORTS[0]);
-    printf("num port %d\n", NUM_PORTS);
+    free(adressesIp);
+    free(pids_chils);
     return 0;
 }
