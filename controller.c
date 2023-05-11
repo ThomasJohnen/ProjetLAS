@@ -57,9 +57,10 @@ void controllerFils(void* sl){
         }
         if (reps == NULL){
             nbSocket--;
-        }
-        for (int i = 0; i < sockfdlist->nbr_sockets; i++) {
-            swrite(1,reps[i],strlen(reps[i]))   ;
+        }else{
+            for (int i = 0; i < sockfdlist->nbr_sockets; i++) {
+                swrite(1,reps[i],strlen(reps[i]))   ;
+            }
         }
     }
 
