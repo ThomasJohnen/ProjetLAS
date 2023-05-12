@@ -16,7 +16,7 @@
 
 void endServerHandler(int sig);
 
-Socket_list initSockController(char* adr);
+int* initSockController(char* adr);
 
 int initSocketZombie();
 
