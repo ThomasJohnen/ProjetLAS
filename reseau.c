@@ -14,11 +14,10 @@
 #include "utils_v2.h"
 #include "reseau.h"
 
-#define MAX_BUFFER_SIZE 30
-#define NB_PORTS 10
 
-int* initSockController(char* adr){
-    int* sockfd_list = malloc(NB_PORTS * sizeof(int));
+int* initSockController(void* adresse){
+    char* adr = adresse;
+    int* sockFdList = smalloc(NB_PORTS * sizeof(int));
     int nbHosts = 0;
 
     for(int i = 0; i < NB_PORTS; i++){
@@ -31,15 +30,13 @@ int* initSockController(char* adr){
         inet_aton(adr,&addr.sin_addr);
 
         if(connect(sockfd, (struct sockaddr *) &addr, sizeof(addr))==0){
-            sockfd_list[nbHosts] = sockfd;
+            sockFdList[nbHosts] = sockfd;
             nbHosts ++;
             printf("port %d : %d\n", nbHosts, PORTS[i]);
-        }else {
-            sockfd_list[nbHosts] = -1;
         }
     }
     printf("\nnombre de hosts : %d\n", nbHosts);
-    return sockfd_list;
+    return sockFdList;
 }
 
 int initSocketZombie()
