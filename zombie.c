@@ -21,7 +21,14 @@
 
     int main(int argc, char *argv[]){
 
-        int sockfd = initSocketZombie();
+        int sockfd;
+        int port;
+        if(argc<2){
+            sockfd = initSocketZombie(0);
+        }else{
+            port = atoi(argv[1]);
+            sockfd = initSocketZombie(port);
+        }
         int i = 0;
 
         int* sockfdController = smalloc(NB_PORTS*sizeof(int));
