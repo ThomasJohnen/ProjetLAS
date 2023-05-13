@@ -30,15 +30,16 @@ void controllerFils(void* sl, void* nbSockets){
     }
 
     char* espace = "\n";
-    while(nbSocket > 0) {
+    while(1) {
         int ret = spoll(fds, nbSocket, 1000);
         if (ret == 0) continue;
 
+        //printf("%d",nbSocket);
         for (int i = 0; i < nbSocket; i++) {
-            if (fds[i].revents && POLLIN) {
-                taille = sread(sockfdlist[i], commande, MAX_TAILLE_BUFFER);
+            if (fds[i].revents & POLLIN) {
+                taille = read(sockfdlist[i], commande, MAX_TAILLE_BUFFER);
                 if (taille == 0) {
-                    fds[i].fd = -1;
+                    sclose(sockfdlist[i]);
                     nbSocket--;
                 } else {
                     swrite(STDOUT_FILENO, commande, taille);
@@ -46,9 +47,13 @@ void controllerFils(void* sl, void* nbSockets){
                 }
             }
         }
-    }
 
-    kill(getppid(), SIGTERM);
+        //printf("%d",nbSocket);
+        if (nbSocket == 0) {
+            kill(getppid(), SIGTERM);
+            break;
+        }
+    }
     exit(EXIT_SUCCESS);
 }
 
@@ -74,14 +79,16 @@ int main(int argc, char *argv[]) {
     pid_t pids_chils = fork_and_run2(controllerFils, sockfdlist, &nbSocket);
     
     char commande[MAX_TAILLE_BUFFER];
-    int taille;
+    int taille, tailleWrite;
     printf("\nEntrez une commande à exécuter : \n");
     while((taille = sread(STDIN_FILENO,commande, MAX_TAILLE_BUFFER))!=0){
-        for (int i = 0; i < tailleSockFdList; i++)
-        {
-            if(sockfdlist[i] != 0){
-                swrite(sockfdlist[i], commande, taille);
-            } 
+        for (int i = 0; i < tailleSockFdList; i++) {
+            if (sockfdlist[i] != 0) {
+                tailleWrite = write(sockfdlist[i], commande, taille);
+                if (tailleWrite == -1) {
+                    sockfdlist[i] = 0;
+                }
+            }
         }
     }
 
