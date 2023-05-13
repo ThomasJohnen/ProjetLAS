@@ -89,17 +89,14 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < argc-1; i++) {
         skill(pids_chils[i],SIGTERM);
     }
-    printf("\nSIGTERM\n");
 
     for (int i = 0; i < nbSocket; i++) {
         if(sockfdlist[i] != 0){
             sclose(sockfdlist[i]);
-            printf("close\n");
         }
     }
 
     free(sockfdlist);
     free(pids_chils);
-    printf("free\n");
     return 0;
 }
