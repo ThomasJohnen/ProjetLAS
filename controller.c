@@ -14,11 +14,12 @@
 
 #define NB_SOCKET 100
 #define NB_ADRESSES 2
-#define MAX_TAILLE_BUFFER 256
+#define MAX_TAILLE_BUFFER 1024
 
 void controllerFils(void* sl, void* nbSockets){
     int* sockfdlist = sl;
     int nbSocket = *(int*) nbSockets;
+    int realNbSocketfd = nbSocket;
 
     struct pollfd fds[NB_SOCKET];
     char commande[MAX_TAILLE_BUFFER];
@@ -30,30 +31,24 @@ void controllerFils(void* sl, void* nbSockets){
     }
 
     char* espace = "\n";
-    while(1) {
+    while(realNbSocketfd>0) {
         int ret = spoll(fds, nbSocket, 1000);
         if (ret == 0) continue;
 
-        //printf("%d",nbSocket);
         for (int i = 0; i < nbSocket; i++) {
             if (fds[i].revents & POLLIN) {
                 taille = read(sockfdlist[i], commande, MAX_TAILLE_BUFFER);
                 if (taille == 0) {
                     sclose(sockfdlist[i]);
-                    nbSocket--;
+                    realNbSocketfd--;
                 } else {
                     swrite(STDOUT_FILENO, commande, taille);
                     swrite(STDOUT_FILENO,espace,strlen(espace));
                 }
             }
         }
-
-        //printf("%d",nbSocket);
-        if (nbSocket == 0) {
-            kill(getppid(), SIGTERM);
-            break;
-        }
     }
+    skill(getppid(), SIGTERM);
     exit(EXIT_SUCCESS);
 }
 
@@ -94,17 +89,14 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < argc-1; i++) {
         skill(pids_chils[i],SIGTERM);
     }
-    printf("\nSIGTERM\n");
 
     for (int i = 0; i < nbSocket; i++) {
         if(sockfdlist[i] != 0){
             sclose(sockfdlist[i]);
-            printf("close\n");
         }
     }
 
     free(sockfdlist);
     free(pids_chils);
-    printf("free\n");
     return 0;
 }
