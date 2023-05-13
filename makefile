@@ -6,8 +6,8 @@ ALL= zombie controller labo
 
 all: $(ALL)
 
-labo: labo.o utils_v2.o zombie.o
-	gcc $(CFLAGS) -o labo labo.o utils_v2.o zombie.o 
+labo: labo.o utils_v2.o
+	gcc $(CFLAGS) -o labo labo.o utils_v2.o
 
 labo.o: labo.c utils_v2.h  zombie.h
 	gcc $(CFLAGS) -c labo.c

@@ -20,57 +20,43 @@
 
 #include "utils_v2.h"
 #include "zombie.h"
+#include "info.h"
 
-void childLabo(void *arg1)
-{
-    char *port = (char *)(arg1);
-    zombie(port);
+void childLabo(void *p){
+    char *port = p;
+    sexecl("./zombie","zombie", port, NULL);
 }
 
 
 int main(int argc, char const *argv[])
 {
-    // creation de 2 nombre aléatoire
-    int random1 = randomIntBetween(0, 9);
-    int random2 = randomIntBetween(0, 9);
+    int random1, random2;
+    do {
+        random1 = randomIntBetween(0, 9);
+        random2 = randomIntBetween(0, 9);
+    } while (random1 == random2);
 
-    // il faut vérifier que les 2 nombres soient différent
-    if (random1 == random2)
-    {
-        while (random1 == random2)
-        {
-            random2 = randomIntBetween(0, 9);
-        }
-    }
+    char port1[5];
+    char port2[5];
+    sprintf(port1, "%d", PORTS[random1]);
+    sprintf(port2, "%d", PORTS[random2]);
 
-    // On crée les 2 ports avec les 2 nombres aléatoire en char
-    char port1[] = "5000";
-    port1[4] = (random1 + '0');
-    char port2[] = "5000";
-    port2[4] = (random2 + '0');
-
-    // lancer les 2 zombies
     pid_t childLaboId1 = fork_and_run1(childLabo, port1);
     pid_t childLaboId2 = fork_and_run1(childLabo, port2);
 
-    // lis s'il y a un Ctrl+D
     while (true)
     {
-        char *s = smalloc(BUFFER_SIZE*sizeof(char));
+        char *s = smalloc(100*sizeof(char));
         int size = sread(STDIN_FILENO, s, strlen(s));
 
-        // zise = 0 -> Ctrl+D
-        if (size == 0)
-        {
+        if (size == 0){
             break;
         }
     }
 
-    // tue les deux serveurs (zombies)
     skill(childLaboId1, SIGTERM);
     skill(childLaboId2, SIGTERM);
 
-    // attend que tout soit fini avant de ce finir
     swait(&childLaboId1);
     swait(&childLaboId2);
 

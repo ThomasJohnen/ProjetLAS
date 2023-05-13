@@ -14,7 +14,7 @@
 
 #define NB_SOCKET 100
 #define NB_ADRESSES 2
-#define MAX_TAILLE_BUFFER 256
+#define MAX_TAILLE_BUFFER 1024
 
 void controllerFils(void* sl, void* nbSockets){
     int* sockfdlist = sl;
