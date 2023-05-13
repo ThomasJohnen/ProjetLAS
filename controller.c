@@ -63,15 +63,19 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    pid_t* pids_chils = malloc((argc-1) * sizeof(pid_t));
     int tailleSockFdList = NB_PORTS * (argc - 1);
     int* sockfdlist = smalloc(tailleSockFdList * sizeof(int));
-
+    
     int nbSocket = 0;
     for (int i = 1; i < argc; i++) {
         nbSocket += initSockController(argv[i], sockfdlist, nbSocket);
     }
 
-    pid_t pids_chils = fork_and_run2(controllerFils, sockfdlist, &nbSocket);
+    for (int i = 0; i < argc-1; i++)
+    {
+        pids_chils[i] = fork_and_run2(controllerFils, sockfdlist, &nbSocket);
+    }
 
     char commande[MAX_TAILLE_BUFFER];
     int taille, tailleWrite;
@@ -87,7 +91,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    skill(pids_chils,SIGTERM);
+    for(int i = 0; i < argc-1; i++) {
+        skill(pids_chils[i],SIGTERM);
+    }
     printf("\nSIGTERM\n");
 
     for (int i = 0; i < nbSocket; i++) {
@@ -98,6 +104,7 @@ int main(int argc, char *argv[]) {
     }
 
     free(sockfdlist);
+    free(pids_chils);
     printf("free\n");
     return 0;
 }

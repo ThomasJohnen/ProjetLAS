@@ -22,7 +22,6 @@ POST: Retourne une structure Socket_list contenant les descripteurs de socket de
 
 int initSockController(char* adr, int* sockFdList, int start_index);
 
-
 /**
 PRE: Aucune précondition n'est requise.
 POST: Retourne le descripteur de fichier du socket initialisé.
