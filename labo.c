@@ -28,8 +28,7 @@ void childLabo(void *p){
 }
 
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char *argv[]){
     int random1, random2;
     do {
         random1 = randomIntBetween(0, 9);
@@ -40,7 +39,7 @@ int main(int argc, char const *argv[])
     char port2[5];
     sprintf(port1, "%d", PORTS[random1]);
     sprintf(port2, "%d", PORTS[random2]);
-
+    
     pid_t childLaboId1 = fork_and_run1(childLabo, port1);
     pid_t childLaboId2 = fork_and_run1(childLabo, port2);
 
@@ -62,7 +61,3 @@ int main(int argc, char const *argv[])
 
     exit(0);
 }
-
-
-
-//add a comment to commit

