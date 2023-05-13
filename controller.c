@@ -14,101 +14,97 @@
 
 #define NB_SOCKET 100
 #define NB_ADRESSES 2
-#define MAX_TAILLE_BUFFER 1024
+#define MAX_TAILLE_BUFFER 256
 
-void envoyerCommande(char* commande, int tailleCommande, Socket_list sl) {
-    for (int i = 0; i < sl.nbr_sockets; i++) {
-        swrite(sl.sockets[i], commande, tailleCommande);
-    }
-}
+void controllerFils(void* sl, void* nbSockets){
+    int* sockfdlist = sl;
+    int nbSocket = *(int*) nbSockets;
 
-char** lireReponseCommande(Socket_list sl) {
-    char** reps = malloc(sl.nbr_sockets * sizeof(char*));
-    for (int i = 0; i < sl.nbr_sockets; i++) {
-        char* rep = malloc(100 * sizeof(char));
-        int taille = sread(sl.sockets[i], rep, 100);
-        if(taille == 0){
-            return NULL;
-        }
-        reps[i] = rep;
-    }
-    return reps;
-}
-
-void controllerFils(void* sl){
-    Socket_list* sockfdlist = sl;
-    int nbSocket = sockfdlist->nbr_sockets;
     struct pollfd fds[NB_SOCKET];
-    char** reps;
+    char commande[MAX_TAILLE_BUFFER];
+    int taille;
     
-	for (int i = 0; i < nbSocket; i++)
-	{
-		fds[i].fd = sockfdlist->sockets[i];
-		fds[i].events = POLLIN;
-	}
-    while(nbSocket>0){
-        int ret = spoll(fds,nbSocket,1000);
-        if(ret == 0) continue;
-        for (size_t i = 0; i < nbSocket; i++)
-        {
-            if(fds[i].revents && POLLIN){
-                reps = lireReponseCommande(*sockfdlist);
-            }
-        }
-        if (reps == NULL){
-            nbSocket--;
-        }else{
-            for (int i = 0; i < sockfdlist->nbr_sockets; i++) {
-                swrite(1,reps[i],strlen(reps[i]))   ;
-            }
-        }
+    for (int i = 0; i < nbSocket; i++) {
+        fds[i].fd = sockfdlist[i];
+        fds[i].events = POLLIN;
     }
 
-    skill(getppid(),SIGTERM);
+    char* espace = "\n";
+    while(1) {
+        int ret = spoll(fds, nbSocket, 1000);
+        if (ret == 0) continue;
+
+        //printf("%d",nbSocket);
+        for (int i = 0; i < nbSocket; i++) {
+            if (fds[i].revents & POLLIN) {
+                taille = read(sockfdlist[i], commande, MAX_TAILLE_BUFFER);
+                if (taille == 0) {
+                    sclose(sockfdlist[i]);
+                    nbSocket--;
+                } else {
+                    swrite(STDOUT_FILENO, commande, taille);
+                    swrite(STDOUT_FILENO,espace,strlen(espace));
+                }
+            }
+        }
+
+        //printf("%d",nbSocket);
+        if (nbSocket == 0) {
+            kill(getppid(), SIGTERM);
+            break;
+        }
+    }
     exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[]) {
-
     if (argc < 2) {
         perror("Un argument minimum est nécessaire");
         exit(EXIT_FAILURE);
     }
 
-    char** adressesIp = malloc(argc * sizeof(char*));
-    int* pids_chils = malloc(argc * sizeof(int));
-
-    Socket_list* sockfdlist = malloc(argc * sizeof(Socket_list));
+    pid_t* pids_chils = malloc((argc-1) * sizeof(pid_t));
+    int tailleSockFdList = NB_PORTS * (argc - 1);
+    int* sockfdlist = smalloc(tailleSockFdList * sizeof(int));
+    
+    int nbSocket = 0;
+    for (int i = 1; i < argc; i++) {
+        nbSocket += initSockController(argv[i], sockfdlist, nbSocket);
+    }
 
     for (int i = 0; i < argc-1; i++)
     {
-        adressesIp[i] = argv[i+1];
-        sockfdlist[i] = initSockController(adressesIp[i]);
-        pids_chils[i] = fork_and_run1(controllerFils, &sockfdlist[i]);
+        pids_chils[i] = fork_and_run2(controllerFils, sockfdlist, &nbSocket);
     }
-    
+
     char commande[MAX_TAILLE_BUFFER];
-    int taille;
-    char* message = "\nEntrez une commande à exécuter : \n";
-    swrite(0,message, strlen(message));
-    while((taille = sread(0,commande, MAX_TAILLE_BUFFER))!=0){
-        for (int i = 0; i < argc-1; i++)
-        {
-            envoyerCommande(commande, taille, sockfdlist[i]);
+    int taille, tailleWrite;
+    printf("\nEntrez une commande à exécuter : \n");
+    while((taille = sread(STDIN_FILENO,commande, MAX_TAILLE_BUFFER))!=0){
+        for (int i = 0; i < nbSocket; i++) {
+            if (sockfdlist[i] != 0) {
+                tailleWrite = write(sockfdlist[i], commande, taille);
+                if (tailleWrite == -1) {
+                    sockfdlist[i] = 0;
+                }
+            }
         }
     }
-    for (int i = 0; i < argc-1; i++)
-    {
+
+    for(int i = 0; i < argc-1; i++) {
         skill(pids_chils[i],SIGTERM);
     }
-    for (int i = 0; i < argc-1; i++) {
-        for (int j = 0; j < sockfdlist[i].nbr_sockets; j++)
-        {
-            sclose(sockfdlist[i].sockets[j]);
+    printf("\nSIGTERM\n");
+
+    for (int i = 0; i < nbSocket; i++) {
+        if(sockfdlist[i] != 0){
+            sclose(sockfdlist[i]);
+            printf("close\n");
         }
     }
 
-    free(adressesIp);
+    free(sockfdlist);
     free(pids_chils);
+    printf("free\n");
     return 0;
 }

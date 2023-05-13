@@ -14,14 +14,11 @@
 #include "utils_v2.h"
 #include "reseau.h"
 
-#define MAX_BUFFER_SIZE 30
 
-Socket_list initSockController(char* adr)
-{
-    int* ports = smalloc(NUM_PORTS * sizeof(int));
+int initSockController(char* adr, int* sockFdList, int start_index){
     int nbHosts = 0;
 
-    for(int i = 0; i < NUM_PORTS; i++){
+    for(int i = 0; i < NB_PORTS; i++){
         int sockfd = ssocket();
 
         struct sockaddr_in addr;
@@ -31,22 +28,13 @@ Socket_list initSockController(char* adr)
         inet_aton(adr,&addr.sin_addr);
 
         if(connect(sockfd, (struct sockaddr *) &addr, sizeof(addr))==0){
-            ports[nbHosts] = sockfd;
+            sockFdList[start_index + nbHosts] = sockfd;
             nbHosts ++;
-            char message[MAX_BUFFER_SIZE];
-            sprintf(message, "port %d : %d\n", nbHosts, PORTS[i]);
-            write(STDOUT_FILENO, message, strlen(message));
-        }else {
-            sclose(sockfd);
+            printf("port %d : %d\n", nbHosts, PORTS[i]);
         }
     }
-    char message[MAX_BUFFER_SIZE];
-    sprintf(message, "\nnombre de hosts : %d\n", nbHosts);
-    write(STDOUT_FILENO, message, strlen(message));
-    Socket_list sl;
-    sl.sockets = ports;
-    sl.nbr_sockets = nbHosts;
-    return sl;
+    printf("\nnombre de hosts : %d\n", nbHosts);
+    return nbHosts;
 }
 
 int initSocketZombie()
@@ -57,9 +45,8 @@ int initSocketZombie()
     
     //choisir port aléatoirement
     srand(time(NULL));
-    int randomIndex = rand() % NUM_PORTS;
+    int randomIndex = rand() % NB_PORTS;
     int selectedPort = PORTS[randomIndex];
-    printf("Port sélectionné : %d\n", selectedPort);
 
     struct sockaddr_in addr;
     memset(&addr,0,sizeof(addr));
@@ -69,8 +56,8 @@ int initSocketZombie()
     //tester si port déjà pris
     if (bind(sockfd, (struct sockaddr *) &addr, sizeof(addr))!= -1){
         initiated = 1;
+        printf("Port sélectionné : %d\n", selectedPort);
     }
-
   }
   slisten(sockfd,5);
   return sockfd;
