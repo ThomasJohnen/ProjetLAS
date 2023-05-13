@@ -16,12 +16,6 @@
 #define NB_ADRESSES 2
 #define MAX_TAILLE_BUFFER 256
 
-/*void envoyerCommande(char* commande, int tailleCommande, int* sl) {
-    for (int i = 0; i < sizeof(*sl); i++) {
-           swrite(sl[i], commande, tailleCommande); 
-    }
-}*/
-
 void controllerFils(void* sl, void* nbSockets){
     int* sockfdlist = sl;
     int nbSocket = *(int*) nbSockets;
@@ -35,6 +29,7 @@ void controllerFils(void* sl, void* nbSockets){
         fds[i].events = POLLIN;
     }
 
+    char* espace = "\n";
     while(nbSocket > 0) {
         int ret = spoll(fds, nbSocket, 1000);
         if (ret == 0) continue;
@@ -47,6 +42,7 @@ void controllerFils(void* sl, void* nbSockets){
                     nbSocket--;
                 } else {
                     swrite(STDOUT_FILENO, commande, taille);
+                    swrite(STDOUT_FILENO,espace,strlen(espace));
                 }
             }
         }
