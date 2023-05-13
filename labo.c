@@ -21,6 +21,12 @@
 #include "utils_v2.h"
 #include "zombie.h"
 
+void childLabo(void *arg1)
+{
+    char *port = (char *)(arg1);
+    zombie(port);
+}
+
 
 int main(int argc, char const *argv[])
 {
@@ -50,7 +56,7 @@ int main(int argc, char const *argv[])
     // lis s'il y a un Ctrl+D
     while (true)
     {
-        char *s = smalloc(BUFFER_SIZE);
+        char *s = smalloc(BUFFER_SIZE*sizeof(char));
         int size = sread(STDIN_FILENO, s, strlen(s));
 
         // zise = 0 -> Ctrl+D
@@ -71,10 +77,6 @@ int main(int argc, char const *argv[])
     exit(0);
 }
 
-void childLabo(void *arg1)
-{
-    char *port = (char *)(arg1);
-    zombie(port);
-}
+
 
 //add a comment to commit
