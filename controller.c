@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 
     int tailleSockFdList = (argc-1)*NB_PORTS;
     
-    int* sockfdlist = malloc(tailleSockFdList * sizeof(int));
+    int* sockfdlist = smalloc(tailleSockFdList * sizeof(int));
 
     sockfdlist = initSockController(argv[1]);
 

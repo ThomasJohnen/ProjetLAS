@@ -21,19 +21,29 @@ void zombieFils(void* sockfdController){
 
 int main(int argc, char *argv[]){
 
+    int i = 0;
+
     int sockfd = initSocketZombie();
+
+    int* sockfdController = smalloc(NB_PORTS*sizeof(int));
     
     while(true){
         // utilisé accept et pas saccept. verifier son resultat et si == -1 alors c'est qu'il a recu un signal (pour labo)
-        int sockfdController = accept(sockfd, NULL, NULL);
+        sockfdController[i] = accept(sockfd, NULL, NULL);
 
-        if(sockfdController != -1){
-            fork_and_run1(zombieFils, &sockfdController);
+        if(sockfdController[i] != -1){
+            fork_and_run1(zombieFils, &sockfdController[i]);
         }else {
             // faire ici pour labo
-            sclose(sockfdController);
+            //sclose(sockfdController[i]);
             break;
         }
+        i++;
     }
+    for (int j = 0; j < sizeof(sockfdController); i++)
+    {
+        sclose(sockfdController[i]);
+    }
+    
     return 0;
 }
