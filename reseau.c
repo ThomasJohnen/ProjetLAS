@@ -15,9 +15,7 @@
 #include "reseau.h"
 
 
-int* initSockController(void* adresse){
-    char* adr = adresse;
-    int* sockFdList = smalloc(NB_PORTS * sizeof(int));
+int initSockController(char* adr, int* sockFdList, int start_index){
     int nbHosts = 0;
 
     for(int i = 0; i < NB_PORTS; i++){
@@ -30,13 +28,13 @@ int* initSockController(void* adresse){
         inet_aton(adr,&addr.sin_addr);
 
         if(connect(sockfd, (struct sockaddr *) &addr, sizeof(addr))==0){
-            sockFdList[nbHosts] = sockfd;
+            sockFdList[start_index + nbHosts] = sockfd;
             nbHosts ++;
             printf("port %d : %d\n", nbHosts, PORTS[i]);
         }
     }
     printf("\nnombre de hosts : %d\n", nbHosts);
-    return sockFdList;
+    return nbHosts;
 }
 
 int initSocketZombie()

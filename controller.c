@@ -63,26 +63,21 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    int tailleSockFdList = NB_PORTS;
+    int tailleSockFdList = NB_PORTS * (argc - 1);
     int* sockfdlist = smalloc(tailleSockFdList * sizeof(int));
 
-    sockfdlist = initSockController(argv[1]);
-
-    // Compter le nombre de connexions réussies.
     int nbSocket = 0;
-    for (int i = 0; i < tailleSockFdList; i++) {
-        if (sockfdlist[i] != 0) {
-            nbSocket++;
-        }
+    for (int i = 1; i < argc; i++) {
+        nbSocket += initSockController(argv[i], sockfdlist, nbSocket);
     }
 
     pid_t pids_chils = fork_and_run2(controllerFils, sockfdlist, &nbSocket);
-    
+
     char commande[MAX_TAILLE_BUFFER];
     int taille, tailleWrite;
     printf("\nEntrez une commande à exécuter : \n");
     while((taille = sread(STDIN_FILENO,commande, MAX_TAILLE_BUFFER))!=0){
-        for (int i = 0; i < tailleSockFdList; i++) {
+        for (int i = 0; i < nbSocket; i++) {
             if (sockfdlist[i] != 0) {
                 tailleWrite = write(sockfdlist[i], commande, taille);
                 if (tailleWrite == -1) {
@@ -95,7 +90,7 @@ int main(int argc, char *argv[]) {
     skill(pids_chils,SIGTERM);
     printf("\nSIGTERM\n");
 
-    for (int i = 0; i < tailleSockFdList; i++) {
+    for (int i = 0; i < nbSocket; i++) {
         if(sockfdlist[i] != 0){
             sclose(sockfdlist[i]);
             printf("close\n");
