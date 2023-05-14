@@ -20,7 +20,8 @@
 void zombieFils(void* sockfdController);
 
 /**
-* fermeture du programme zombie et des ses processus fils
+PRE: sig : le signal reçu
+POST: Met fin au processus zombie du laboratoire en initialisant la variable globale "end" à 1
 */
 void endZombieLabo(int sig);
 
