@@ -16,27 +16,14 @@
 #include "utils_v2.h"
 
 
-/**
-
-PRE: commande : une chaîne de caractères représentant une commande à envoyer.
-    tailleCommande : la taille de la commande à envoyer en octets.
-    sl : une structure Socket_list contenant les descripteurs de sockets destinataires.
-POST: Envoie la commande donnée à tous les descripteurs de sockets contenus dans la Socket_list donnée.
-*/
-void envoyerCommande(char* commande, int tailleCommande, Socket_list sl);
-
-/**
-PRE: sl : une structure Socket_list contenant les descripteurs de sockets sources.
-POST: La réponse est stockée dans un tableau de pointeurs de chaînes de caractères alloué dynamiquement.
-*/
-char** lireReponseCommande(Socket_list sl);
-
 
 /**
 PRE: sl pointe vers une structure Socket_list valide et initialisée, contenant des descripteurs de socket ouverts.
-POST: Si le socket est fermé, le nombre total de sockets ouverts est mis à jour et la boucle continue jusqu'à ce que tous les sockets soient fermés.
-    Si le processus père est toujours en vie, le processus fils est tué et la fonction se termine avec EXIT_SUCCESS.
+     nbSockets est un pointeur vers un entier représentant le nombre de sockets dans le tableau sockfdlist
+POST: Le processus fils écoute en permanence les sockets pour lesquels il a été créé, affiche les commandes reçues. 
+      Et se termine si tous les sockets ont été fermés.
+
 */
-void controllerFils(void* sl);
+void controllerFils(void* sl, void* nbSockets);
 
 #endif

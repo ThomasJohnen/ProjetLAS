@@ -16,8 +16,12 @@
 
 /**
 
-PRE: adr : une chaîne de caractères représentant une adresse IP valide.
-POST: Retourne une structure Socket_list contenant les descripteurs de socket des ports qui sont connectés avec succès à l'adresse IP.
+PRE: adr : C'est une chaîne de caractères représentant une adresse IP valide
+     sockFdList : C' est un tableau d'entiers initialisé de taille au moins NB_PORTS
+     start_index : C'est un entier représentant l'indice de départ pour stocker les descripteurs de sockets dans le tableau sockFdList
+POST: Retourne le nombre de sockets créés et connectés avec succès aux adresses IP et ports spécifiés
+      Les descripteurs de sockets créés et connectés avec succès sont stockés dans sockFdList à partir de l'indice start_index
+      Toutes les autres entrées de sockFdList à partir de l'indice start_index + le nombre de sockets connectés avec succès sont mises à zéro
 */
 
 int initSockController(char* adr, int* sockFdList, int start_index);
