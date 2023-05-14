@@ -1,3 +1,5 @@
+// Created by Devaux Jérome, Fuentes Gonzalez Lucas, Johnen Thomas on 14/05/2023.
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
