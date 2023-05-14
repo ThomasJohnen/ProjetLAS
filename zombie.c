@@ -9,6 +9,12 @@
 #include "info.h"
 #include "reseau.h"
 
+volatile sig_atomic_t end = 0;
+
+void endZombieLabo(int sig){
+    end = 1;
+}
+
 void zombieFils(void* sockfdController){
     int* sockfd = sockfdController;
 
@@ -20,30 +26,40 @@ void zombieFils(void* sockfdController){
 }
 
 int main(int argc, char *argv[]){
+    int sockfd;
+    int port;
 
+    ssigaction(SIGTERM,endZombieLabo);
+
+    if(argc < 2){
+        sockfd = initSocketZombie(0);
+    }else{
+        port = atoi(argv[1]);
+        sockfd = initSocketZombie(port);
+    }
     int i = 0;
-
-    int sockfd = initSocketZombie();
-
+    pid_t* pids_chils = malloc(NB_PORTS * sizeof(pid_t));
     int* sockfdController = smalloc(NB_PORTS*sizeof(int));
-    
-    while(true){
-        // utilisé accept et pas saccept. verifier son resultat et si == -1 alors c'est qu'il a recu un signal (pour labo)
-        sockfdController[i] = accept(sockfd, NULL, NULL);
 
+    for (int j = 0; j < NB_PORTS; j++) {
+        sockfdController[j] = -1;
+    }
+    
+    while(!end){
+        sockfdController[i] = accept(sockfd, NULL, NULL);
         if(sockfdController[i] != -1){
-            fork_and_run1(zombieFils, &sockfdController[i]);
+            pids_chils[i] = fork_and_run1(zombieFils, &sockfdController[i]);
+            i++;
         }else {
-            // faire ici pour labo
-            //sclose(sockfdController[i]);
             break;
         }
-        i++;
     }
-    for (int j = 0; j < sizeof(sockfdController); i++)
+    for (int i = 0; i < NB_PORTS; i++)
     {
-        sclose(sockfdController[i]);
+        skill(pids_chils[i],SIGTERM);
     }
     
-    return 0;
+    sclose(sockfd);
+    free(pids_chils);
+    free(sockfdController);
 }

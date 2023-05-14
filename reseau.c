@@ -15,9 +15,7 @@
 #include "reseau.h"
 
 
-int* initSockController(void* adresse){
-    char* adr = adresse;
-    int* sockFdList = smalloc(NB_PORTS * sizeof(int));
+int initSockController(char* adr, int* sockFdList, int start_index){
     int nbHosts = 0;
 
     for(int i = 0; i < NB_PORTS; i++){
@@ -30,25 +28,29 @@ int* initSockController(void* adresse){
         inet_aton(adr,&addr.sin_addr);
 
         if(connect(sockfd, (struct sockaddr *) &addr, sizeof(addr))==0){
-            sockFdList[nbHosts] = sockfd;
+            sockFdList[start_index + nbHosts] = sockfd;
             nbHosts ++;
             printf("port %d : %d\n", nbHosts, PORTS[i]);
         }
     }
     printf("\nnombre de hosts : %d\n", nbHosts);
-    return sockFdList;
+    return nbHosts;
 }
 
-int initSocketZombie()
-{ // intialise serveur d'écoute
+int initSocketZombie(int port){ 
+  int selectedPort = port;
   int sockfd = ssocket();
   int initiated = 0;
+  int tour = 0;
   while (initiated==0){
     
-    //choisir port aléatoirement
-    srand(time(NULL));
-    int randomIndex = rand() % NB_PORTS;
-    int selectedPort = PORTS[randomIndex];
+    if(selectedPort == 0){
+      if(selectedPort == 0 && tour != 0) printf("Le port que vous avez demandé est déja pris\n");
+      //choisir port aléatoirement
+      srand(time(NULL));
+      int randomIndex = rand() % NB_PORTS;
+      selectedPort = PORTS[randomIndex];
+    }
 
     struct sockaddr_in addr;
     memset(&addr,0,sizeof(addr));
@@ -60,6 +62,8 @@ int initSocketZombie()
         initiated = 1;
         printf("Port sélectionné : %d\n", selectedPort);
     }
+    selectedPort = 0;
+    tour++;
   }
   slisten(sockfd,5);
   return sockfd;

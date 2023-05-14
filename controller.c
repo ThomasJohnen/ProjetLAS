@@ -16,53 +16,39 @@
 #define NB_ADRESSES 2
 #define MAX_TAILLE_BUFFER 1024
 
-/*void envoyerCommande(char* commande, int tailleCommande, int* sl) {
-    for (int i = 0; i < sizeof(*sl); i++) {
-           swrite(sl[i], commande, tailleCommande); 
-    }
-}*/
-
-void controllerFils(void* sl){
+void controllerFils(void* sl, void* nbSockets){
     int* sockfdlist = sl;
-    int realNbSockets = 0;
-    for (int i = 0; i < sizeof(sockfdlist); i++)
-    {
-        if(sockfdlist[i] != 0) realNbSockets ++;
-    }
+    int nbSocket = *(int*) nbSockets;
+    int realNbSocketfd = nbSocket;
 
     struct pollfd fds[NB_SOCKET];
     char commande[MAX_TAILLE_BUFFER];
-    int nbSocket = sizeof(sockfdlist);
     int taille;
     
-	for (int i = 0; i < nbSocket; i++)
-	{
-		fds[i].fd = sockfdlist[i];
-		fds[i].events = POLLIN;
-	}
+    for (int i = 0; i < nbSocket; i++) {
+        fds[i].fd = sockfdlist[i];
+        fds[i].events = POLLIN;
+    }
 
-    printf("%d", realNbSockets);
-    while(realNbSockets>0){
-        int ret = spoll(fds,nbSocket,1000);
-        if(ret == 0) continue;
+    char* espace = "\n";
+    while(realNbSocketfd>0) {
+        int ret = spoll(fds, nbSocket, 1000);
+        if (ret == 0) continue;
 
-        for (int i = 0; i < nbSocket; i++)
-        {
-            if(fds[i].revents && POLLIN){
-                taille = sread(sockfdlist[i], commande, MAX_TAILLE_BUFFER);
-                if(taille == 0){
-                    realNbSockets --;
-                    printf("%d", realNbSockets);
-                }else{
-                    nwrite(1, commande, taille);
-                    char* espace = "\n";
-                    nwrite(STDOUT_FILENO,espace,strlen(espace));
+        for (int i = 0; i < nbSocket; i++) {
+            if (fds[i].revents & POLLIN) {
+                taille = read(sockfdlist[i], commande, MAX_TAILLE_BUFFER);
+                if (taille == 0) {
+                    sclose(sockfdlist[i]);
+                    realNbSocketfd--;
+                } else {
+                    swrite(STDOUT_FILENO, commande, taille);
+                    swrite(STDOUT_FILENO,espace,strlen(espace));
                 }
             }
         }
     }
-    printf("%d", realNbSockets);
-    skill(getppid(),SIGTERM);
+    skill(getppid(), SIGTERM);
     exit(EXIT_SUCCESS);
 }
 
@@ -72,40 +58,45 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    int tailleSockFdList = (argc-1)*NB_PORTS;
-    
+    pid_t* pids_chils = malloc((argc-1) * sizeof(pid_t));
+    int tailleSockFdList = NB_PORTS * (argc - 1);
     int* sockfdlist = smalloc(tailleSockFdList * sizeof(int));
-
-    sockfdlist = initSockController(argv[1]);
-
-    pid_t pids_chils = fork_and_run1(controllerFils, sockfdlist);
     
+    int nbSocket = 0;
+    for (int i = 1; i < argc; i++) {
+        nbSocket += initSockController(argv[i], sockfdlist, nbSocket);
+    }
+
+    for (int i = 0; i < argc-1; i++)
+    {
+        pids_chils[i] = fork_and_run2(controllerFils, sockfdlist, &nbSocket);
+    }
+
     char commande[MAX_TAILLE_BUFFER];
-    int taille;
+    int taille, tailleWrite;
     printf("\nEntrez une commande à exécuter : \n");
-    while((taille = sread(0,commande, MAX_TAILLE_BUFFER))!=0){
-        for (int i = 0; i < tailleSockFdList; i++)
-        {
-            if(sockfdlist[i] != 0){
-                nwrite(sockfdlist[i], commande, taille);
-                /*char* test = "\necriture\n";
-                nwrite(STDOUT_FILENO,test,strlen(test));*/
-            } 
+    while((taille = sread(STDIN_FILENO,commande, MAX_TAILLE_BUFFER))!=0){
+        for (int i = 0; i < nbSocket; i++) {
+            if (sockfdlist[i] != 0) {
+                tailleWrite = write(sockfdlist[i], commande, taille);
+                if (tailleWrite == -1) {
+                    sockfdlist[i] = 0;
+                }
+            }
         }
     }
 
-    skill(pids_chils,SIGTERM);
-    printf("\nSIGTERM\n");
+    for(int i = 0; i < argc-1; i++) {
+        skill(pids_chils[i],SIGTERM);
+    }
 
-    for (int i = 0; i < tailleSockFdList; i++) {
+    for (int i = 0; i < nbSocket; i++) {
         if(sockfdlist[i] != 0){
-            
             sclose(sockfdlist[i]);
-            printf("close\n");
         }
     }
 
     free(sockfdlist);
-    printf("free\n");
+    free(pids_chils);
     return 0;
 }
