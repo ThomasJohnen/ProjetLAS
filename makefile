@@ -9,7 +9,7 @@ all: $(ALL)
 labo: labo.o utils_v2.o
 	gcc $(CFLAGS) -o labo labo.o utils_v2.o
 
-labo.o: labo.c utils_v2.h  zombie.h
+labo.o: labo.c utils_v2.h  zombie.h labo.h
 	gcc $(CFLAGS) -c labo.c
 
 zombie : zombie.o utils_v2.o reseau.o
